@@ -32,9 +32,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     shareLink.addEventListener('click', async (event) => {
       event.preventDefault();
       const shareData = {
-        title: 'Yet Another Speed Dial',
-        text: 'Yet Another Speed Dial - an open source customizable new tab page for Chrome and Firefox.',
-        url: 'https://www.yetanotherspeeddial.com'
+        title: 'OhMySwipeDeck',
+        text: 'OhMySwipeDeck - a gesture-first swipe deck new tab page for Chrome, Edge, and Firefox.',
+        url: 'https://github.com/yangbukun/OhMySwipeDeck'
       };
       if (navigator.share && navigator.canShare(shareData)) {
         try {
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 // Copy to clipboard function for share buttons
 function copyToClipboard() {
-  const url = 'www.yetanotherspeeddial.com';
+  const url = 'github.com/yangbukun/OhMySwipeDeck';
   const button = document.getElementById('copyButton');
   
   navigator.clipboard.writeText(url).then(function() {

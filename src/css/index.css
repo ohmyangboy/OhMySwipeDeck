@@ -1,5 +1,16 @@
 :root {
-    --color: #ffffff;
+    --color: #f4f1e8;
+    --surface-0: #0d0f0f;
+    --surface-1: #141716;
+    --surface-2: #1d211f;
+    --surface-glass: rgba(22, 25, 23, 0.66);
+    --surface-glass-strong: rgba(28, 32, 30, 0.82);
+    --line-soft: rgba(244, 241, 232, 0.1);
+    --line-bright: rgba(244, 241, 232, 0.2);
+    --muted: rgba(244, 241, 232, 0.62);
+    --accent: #b9f27d;
+    --accent-2: #73d9c7;
+    --accent-warm: #c7a879;
     --title-opacity: 1;
     --show-folders: none;
     --create-dial-display: block;
@@ -11,6 +22,46 @@
     --dial-width: 178px;
     --dial-height: 118px;
     --dial-margin: 14px; /*todo: oops accidentally bumped this from 12 to 18 */
+    --flow-dial-min-width: 112px;
+    --flow-dial-max-width: 260px;
+    --folder-rail-height: 56px;
+    --folder-rail-radius: 28px;
+    --folder-rail-padding-x: 0;
+    --folder-rail-scroll-padding-x: 5px;
+    --folder-tab-height: 38px;
+    --folder-tab-radius: 19px;
+    --folder-tab-padding-y: 7px;
+    --folder-tab-padding-x: 14px;
+    --folder-tab-active-height: 46px;
+    --folder-tab-active-radius: 23px;
+    --folder-tab-active-padding-y: 9px;
+    --folder-tab-active-padding-x: 20px;
+    --folder-tab-inner-inset: 2px;
+    --folder-tab-gap: 5px;
+    --folder-control-radius: 19px;
+}
+
+body.themeLight {
+    --color: #17201b;
+    --surface-0: #f4efe6;
+    --surface-1: #fffaf1;
+    --surface-2: #eadfce;
+    --surface-glass: rgba(255, 250, 241, 0.68);
+    --surface-glass-strong: rgba(255, 250, 241, 0.86);
+    --line-soft: rgba(23, 32, 27, 0.12);
+    --line-bright: rgba(23, 32, 27, 0.24);
+    --muted: rgba(23, 32, 27, 0.56);
+    --accent: #3f7d4e;
+    --accent-2: #287d73;
+    --accent-warm: #b17749;
+    --folder-tab-height: 42px;
+    --folder-tab-radius: 21px;
+    --folder-tab-padding-y: 8px;
+    --folder-tab-padding-x: 16px;
+    --folder-tab-active-height: 44px;
+    --folder-tab-active-radius: 22px;
+    --folder-tab-active-padding-y: 8px;
+    --folder-tab-active-padding-x: 18px;
 }
 
 /* Apply a smooth transition for the background image */
@@ -77,7 +128,7 @@ html, body {
 }
 
 body {
-    background: #222222;
+    background: var(--surface-0);
     background-size: cover;
     font-family: 'Noto Sans', sans-serif;
     font-size: small;
@@ -89,29 +140,70 @@ body {
 .gradientBackground {
     position: relative;
     overflow: hidden;
+    background:
+        linear-gradient(rgba(244, 241, 232, 0.026) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(244, 241, 232, 0.02) 1px, transparent 1px),
+        linear-gradient(135deg, rgba(199, 168, 121, 0.16) 0%, rgba(199, 168, 121, 0.02) 28%, transparent 48%),
+        linear-gradient(215deg, rgba(115, 217, 199, 0.14) 0%, rgba(115, 217, 199, 0.02) 34%, transparent 58%),
+        linear-gradient(180deg, #171917 0%, #0f1110 48%, #080909 100%);
+    background-size: 56px 56px, 56px 56px, 100% 100%, 100% 100%, 100% 100%;
 }
 
 .gradientBackground::before {
     content: '';
     position: absolute;
     inset: 0;
-    width: 200%;
+    width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, #0fd7fc 0%, #00a7d1 20%, #4a8bfc 40%, #4a8bfc 60%, #00a7d1 80%, #0fd7fc 100%);
-    animation: gradient 30s ease-in-out infinite;
+    background:
+        linear-gradient(rgba(244, 241, 232, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(244, 241, 232, 0.025) 1px, transparent 1px);
+    background-size: 56px 56px;
+    -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.58), rgba(0, 0, 0, 0.18) 68%, transparent);
+    mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.58), rgba(0, 0, 0, 0.18) 68%, transparent);
+    opacity: 0.42;
     z-index: -1;
 }
 
-@keyframes gradient {
-    0% {
-        transform: translateX(0);
-    }
-    50% {
-        transform: translateX(-50%);
-    }
-    100% {
-        transform: translateX(0);
-    }
+.gradientBackground::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0, rgba(255, 255, 255, 0.018) 1px, transparent 1px, transparent 3px),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 24%);
+    mix-blend-mode: soft-light;
+    opacity: 0.32;
+    z-index: -1;
+}
+
+body.themeLight.gradientBackground {
+    background:
+        linear-gradient(rgba(23, 32, 27, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(23, 32, 27, 0.026) 1px, transparent 1px),
+        linear-gradient(140deg, rgba(199, 168, 121, 0.3) 0%, rgba(199, 168, 121, 0.08) 28%, transparent 52%),
+        linear-gradient(220deg, rgba(115, 217, 199, 0.2) 0%, rgba(115, 217, 199, 0.05) 34%, transparent 60%),
+        linear-gradient(180deg, #fff9ee 0%, #f3eadc 50%, #e2d8c9 100%);
+    background-size: 56px 56px, 56px 56px, 100% 100%, 100% 100%, 100% 100%;
+}
+
+body.themeLight.gradientBackground::before {
+    background:
+        linear-gradient(rgba(23, 32, 27, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(23, 32, 27, 0.022) 1px, transparent 1px);
+    background-size: 56px 56px;
+    -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0.1) 64%, transparent);
+    mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0.1) 64%, transparent);
+    opacity: 0.8;
+}
+
+body.themeLight.gradientBackground::after {
+    background:
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.18) 0, rgba(255, 255, 255, 0.18) 1px, transparent 1px, transparent 4px),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.5), transparent 32%);
+    mix-blend-mode: soft-light;
+    opacity: 0.58;
 }
 
 h1 {
@@ -203,7 +295,7 @@ h1 {
     align-items: center;
     text-align: center;
     padding: 0 100px;
-    color: #ffffff;
+    color: var(--color);
     width: 100%;
     z-index: 0;
 }
@@ -239,32 +331,149 @@ h1 {
 }
 
 .folderTitle {
-    opacity: 0.85;
-    font-weight: bold;
-    transition: padding 160ms ease, margin 160ms ease, outline 160ms ease, background 160ms ease;
-    padding: 4px 6px;
-    margin: 8px 6px;
+    --folder-title-radius: var(--folder-tab-radius);
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-height: var(--folder-tab-height);
+    opacity: 0.74;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: 0;
+    transition: padding 180ms ease, margin 180ms ease, opacity 180ms ease, color 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+    padding: var(--folder-tab-padding-y) var(--folder-tab-padding-x);
+    margin: 0 var(--folder-tab-gap);
+    border: 1px solid transparent;
+    border-radius: var(--folder-title-radius);
+    overflow: hidden;
+    white-space: nowrap;
+    color: color-mix(in srgb, var(--color) 82%, transparent);
+    flex: 0 0 auto;
+    scroll-snap-align: center;
+}
+
+.folderTitle::before,
+.folderTitle::after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 180ms ease, transform 220ms ease, filter 220ms ease;
+}
+
+.folderTitle::before {
+    inset: var(--folder-tab-inner-inset);
+    z-index: 0;
+    border-radius: calc(var(--folder-title-radius) - var(--folder-tab-inner-inset));
+    background:
+        radial-gradient(120% 92% at 24% 18%, rgba(255, 255, 255, 0.72), transparent 31%),
+        radial-gradient(110% 78% at 76% 24%, rgba(255, 255, 255, 0.32), transparent 36%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0.09) 48%, rgba(255, 255, 255, 0.24));
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    box-shadow:
+        inset 0 1px 2px rgba(255, 255, 255, 0.62),
+        inset 0 -18px 26px rgba(255, 255, 255, 0.11);
+}
+
+.folderTitle::after {
+    z-index: 1;
+    top: 4px;
+    left: 13%;
+    right: 13%;
+    height: 42%;
+    border-radius: calc(var(--folder-title-radius) - 8px);
+    background:
+        radial-gradient(closest-side at 28% 36%, rgba(255, 255, 255, 0.88), transparent 74%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0));
+    filter: blur(7px);
+    transform: translateY(-5px) scaleX(0.9);
+}
+
+.folderTitleText {
+    position: relative;
+    display: inline-block;
+    z-index: 3;
 }
 
 .folderTitle:hover {
     opacity: 1;
+    color: var(--color);
+    background: color-mix(in srgb, var(--color) 8%, transparent);
+    border-color: color-mix(in srgb, var(--color) 16%, transparent);
 }
 
-/* When a tile is dragged over the folders area, expand ALL folder titles uniformly */
-.folders-drag-active .folderTitle {
-    padding: var(--folder-drop-padding, 60px);
-    margin: 0;
-
-    border-radius: 12px;
+/* Keep folder targets stable while dragging; large hitboxes make Sortable feel detached. */
+.folders-drag-active .folderTitle,
+.folderRailDragging .folderTitle {
+    transition: opacity 120ms ease, color 120ms ease, border-color 120ms ease, background 120ms ease, box-shadow 120ms ease, transform 120ms ease;
 }
 
 /* The specific folder title being hovered gets a brighter highlight */
 .folders-drag-active .folderTitle.drag-hover {
-    background: rgba(255, 255, 255, 0.1);
+    opacity: 1;
+    transform: translateY(-1px) scale(1.04);
+    background:
+        linear-gradient(115deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.08)),
+        var(--surface-glass);
+    border-color: var(--line-bright);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.34),
+        0 14px 34px rgba(0, 0, 0, 0.22);
 }
 
-.activeFolder {
+.activeFolder,
+.scrubPreviewFolder {
+    --folder-title-radius: var(--folder-tab-active-radius);
     opacity: 1;
+    color: #ffffff;
+    padding: var(--folder-tab-active-padding-y) var(--folder-tab-active-padding-x);
+    min-height: var(--folder-tab-active-height);
+    transform: none;
+    background:
+        linear-gradient(115deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.11) 46%, rgba(255, 255, 255, 0.24)),
+        rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.44);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.68),
+        inset 0 -2px 0 rgba(255, 255, 255, 0.24),
+        inset 0 -26px 34px rgba(255, 255, 255, 0.1),
+        0 1px 0 rgba(255, 255, 255, 0.18),
+        0 18px 44px rgba(0, 0, 0, 0.22);
+    -webkit-backdrop-filter: blur(22px) saturate(185%) brightness(1.08);
+    backdrop-filter: blur(22px) saturate(185%) brightness(1.08);
+    text-shadow: 0 1px 10px rgba(0, 0, 0, 0.16);
+}
+
+.activeFolder::before,
+.activeFolder::after,
+.scrubPreviewFolder::before,
+.scrubPreviewFolder::after {
+    opacity: 1;
+}
+
+.activeFolder::after,
+.scrubPreviewFolder::after {
+    transform: translateY(0) scaleX(1);
+}
+
+.folderRailScrubbing .activeFolder:not(.scrubPreviewFolder) {
+    opacity: 0.72;
+    color: color-mix(in srgb, var(--color) 78%, transparent);
+}
+
+.folderRailScrubbing .activeFolder:not(.scrubPreviewFolder)::before,
+.folderRailScrubbing .activeFolder:not(.scrubPreviewFolder)::after {
+    opacity: 0.72;
+}
+
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+    .activeFolder,
+    .scrubPreviewFolder {
+        background: rgba(255, 255, 255, 0.28);
+    }
 }
 
 #deleteFolderModalName {
@@ -301,6 +510,14 @@ h1 {
     background-size: var(--image-scaling);
 }
 
+.tile-content.favicon-thumb {
+    background-color: color-mix(in srgb, var(--color) 8%, transparent);
+    background-size: clamp(20px, calc(var(--dial-width) * 0.26), 56px);
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--color) 8%, transparent),
+        inset 0 18px 36px rgba(255, 255, 255, 0.03);
+}
+
 .tile-title {
     opacity: var(--title-opacity);
     text-align: center;
@@ -332,6 +549,226 @@ h1 {
     opacity: 1;
 }
 
+.flowDial #tileContainer {
+    justify-content: flex-start;
+    align-items: flex-start;
+    padding-top: clamp(52px, 11vh, 124px);
+    padding-left: clamp(22px, 7vw, 132px);
+    padding-right: 28px;
+}
+
+.flowDial .container {
+    align-content: flex-start;
+    align-items: flex-start;
+    justify-content: flex-start;
+    min-height: auto;
+    width: min(980px, calc(100vw - 56px));
+    max-width: min(980px, calc(100vw - 56px));
+    margin: 0;
+    gap: 8px;
+}
+
+.flowDial .tile {
+    width: fit-content;
+    min-width: var(--flow-dial-min-width);
+    max-width: var(--flow-dial-max-width);
+    height: var(--dial-height);
+    margin: var(--dial-margin);
+    border-radius: 5px;
+    flex: 0 1 auto;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.015)),
+        rgba(11, 11, 22, 0.62);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 8px 22px rgba(0, 0, 0, 0.18);
+    -webkit-backdrop-filter: blur(14px) saturate(130%);
+    backdrop-filter: blur(14px) saturate(130%);
+    overflow: hidden;
+    transition: transform 160ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.flowDial .tile:hover {
+    transform: translateY(-1px);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03)),
+        rgba(18, 18, 34, 0.76);
+    border-color: rgba(255, 255, 255, 0.14);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        0 12px 26px rgba(0, 0, 0, 0.24);
+}
+
+.flowDial .tile-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: auto;
+    max-width: 100%;
+    padding: 0 17px;
+    box-sizing: border-box;
+}
+
+.flowDial .tile-content {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+    filter: saturate(1.08) brightness(1.12);
+}
+
+.flowDial .tile-content.favicon-thumb {
+    background-size: 20px 20px;
+    box-shadow: none;
+}
+
+.flowDial .tile-title {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: calc(var(--flow-dial-max-width) - 64px);
+    padding: 0;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0;
+    color: color-mix(in srgb, var(--color) 74%, transparent);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+body.themeLight .activeFolder,
+body.themeLight .scrubPreviewFolder {
+    color: #151b17;
+    background:
+        radial-gradient(110% 120% at 22% 6%, rgba(255, 255, 255, 0.96), transparent 40%),
+        radial-gradient(78% 92% at 80% 100%, rgba(209, 151, 66, 0.16), transparent 58%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(246, 236, 217, 0.68)),
+        linear-gradient(135deg, rgba(232, 213, 180, 0.56), rgba(250, 240, 221, 0.42)),
+        rgba(255, 250, 241, 0.9);
+    border-color: rgba(160, 116, 52, 0.38);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        inset 0 -1px 0 rgba(160, 116, 52, 0.12),
+        inset 0 -20px 30px rgba(177, 124, 48, 0.055),
+        0 1px 0 rgba(255, 255, 255, 0.78),
+        0 0 0 3px rgba(255, 255, 255, 0.42),
+        0 0 0 5px rgba(200, 151, 80, 0.16),
+        0 14px 30px rgba(172, 118, 42, 0.14);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.58);
+}
+
+body.themeLight .activeFolder::before,
+body.themeLight .scrubPreviewFolder::before {
+    background:
+        radial-gradient(100% 80% at 24% 18%, rgba(255, 255, 255, 0.82), transparent 34%),
+        radial-gradient(92% 80% at 78% 18%, rgba(255, 226, 174, 0.32), transparent 40%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.48), rgba(255, 252, 244, 0.18) 48%, rgba(178, 122, 41, 0.065));
+    border-color: rgba(255, 255, 255, 0.68);
+    box-shadow:
+        inset 0 1px 2px rgba(255, 255, 255, 0.72),
+        inset 0 -18px 26px rgba(172, 113, 32, 0.055);
+}
+
+body.themeLight .activeFolder .folderTitleText::after,
+body.themeLight .scrubPreviewFolder .folderTitleText::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -8px;
+    width: 18px;
+    height: 3px;
+    border-radius: 999px;
+    transform: translateX(-50%);
+    background: linear-gradient(90deg, rgba(184, 124, 41, 0), rgba(184, 124, 41, 0.88), rgba(184, 124, 41, 0));
+    box-shadow:
+        0 0 10px rgba(190, 126, 38, 0.34),
+        0 0 1px rgba(121, 78, 25, 0.4);
+}
+
+body.themeLight.folderRailScrubbing .scrubPreviewFolder {
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.92),
+        inset 0 -1px 0 rgba(160, 116, 52, 0.13),
+        inset 0 -20px 30px rgba(177, 124, 48, 0.06),
+        0 1px 0 rgba(255, 255, 255, 0.8),
+        0 0 0 3px rgba(255, 255, 255, 0.46),
+        0 0 0 7px rgba(200, 151, 80, 0.2),
+        0 16px 34px rgba(172, 118, 42, 0.18);
+}
+
+body.themeLight.folderRailScrubbing .activeFolder:not(.scrubPreviewFolder) {
+    border-color: rgba(183, 158, 116, 0.14);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.72),
+        inset 0 -1px 0 rgba(183, 158, 116, 0.045),
+        0 8px 22px rgba(172, 138, 91, 0.045),
+        0 0 0 1px rgba(255, 255, 255, 0.24);
+}
+
+body.themeLight.flowDial .tile {
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.25)),
+        rgba(255, 250, 241, 0.68);
+    border-color: rgba(23, 32, 27, 0.1);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.82),
+        0 10px 28px rgba(92, 75, 52, 0.14);
+}
+
+body.themeLight.flowDial .tile:hover {
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.36)),
+        rgba(255, 250, 241, 0.84);
+    border-color: rgba(23, 32, 27, 0.16);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        0 14px 34px rgba(92, 75, 52, 0.18);
+}
+
+body.themeLight.flowDial .tile-content {
+    background-color: rgba(23, 32, 27, 0.08);
+    box-shadow: inset 0 0 0 1px rgba(23, 32, 27, 0.08);
+}
+
+.flowDial .createDial {
+    width: 48px;
+    min-width: 48px;
+    max-width: 48px;
+    display: var(--create-dial-display);
+}
+
+.flowDial .createDial .tile-main {
+    justify-content: center;
+    padding: 0;
+}
+
+.flowDial .createDial-content {
+    width: 18px;
+    height: 18px;
+    flex-basis: 18px;
+    background-size: 18px 18px;
+    border: 0;
+    opacity: 0.72;
+    box-shadow: none;
+}
+
+@media (max-width: 768px) {
+    .flowDial #tileContainer {
+        padding-top: 48px;
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+
+    .flowDial .container {
+        max-width: 100%;
+    }
+}
+
 a {
     text-decoration: none;
     color: var(--color);
@@ -342,8 +779,31 @@ a {
     visibility: hidden;
 }
 
+.folderSortGhost {
+    visibility: hidden;
+    opacity: 0;
+}
+
+.folderSortChosen {
+    opacity: 0.92;
+}
+
+.folderRailDragging .folderSortChosen:not(.folderSortFallback),
+.folderRailDragging .folderSortGhost:not(.folderSortFallback) {
+    visibility: hidden;
+    opacity: 0;
+}
+
 .dragging {
     opacity: 1 !important;
+}
+
+.folderSortFallback {
+    opacity: 0.96 !important;
+    position: fixed !important;
+    margin: 0 !important;
+    transform: none !important;
+    will-change: left, top;
 }
 
 .menu {
@@ -351,11 +811,13 @@ a {
     opacity: 0;
     position: fixed;
     z-index: 2;
-    background-color: #111111;
-    color: #ffffff;
-    border: none;
+    background-color: var(--surface-glass-strong);
+    color: var(--color);
+    border: 1px solid var(--line-soft);
     border-radius: 8px;
-    box-shadow: 0 0 10px 0 rgba(0,0,0,0.2);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.42);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    backdrop-filter: blur(18px) saturate(140%);
     transition: visibility 0s, opacity 160ms ease;
 }
 .menu-options {
@@ -384,7 +846,7 @@ a {
     flex-shrink: 0;
 }
 .menu-option:hover {
-    background-color: #333333;
+    background-color: rgba(244, 241, 232, 0.08);
 }
 
 .modal {
@@ -400,7 +862,7 @@ a {
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background-color: rgba(0,0,0,0.6);
+    background-color: rgba(4, 5, 5, 0.68);
     transition: opacity 150ms;
 }
 
@@ -408,14 +870,20 @@ a {
 .modal-content {
     transform: scale(0.8);
     opacity: 0;
-    background-color: #111111;
-    color: #ffffff;
-    border: 1px solid #000000;
+    background-color: var(--surface-glass-strong);
+    color: var(--color);
+    border: 1px solid var(--line-soft);
     border-radius: 6px;
     padding: 5px;
     width: 420px;
-    box-shadow: 0 48px 48px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 48px 70px rgba(0, 0, 0, 0.38);
+    -webkit-backdrop-filter: blur(18px) saturate(145%);
+    backdrop-filter: blur(18px) saturate(145%);
     transition: 160ms;
+}
+
+.modal-content p {
+    white-space: pre-line;
 }
 
 .modalImg-item {
@@ -451,7 +919,7 @@ a {
 
 .modal [type="file"] + label {
     border: none;
-    color: #fff;
+    color: var(--color);
     cursor: default;
     display: inline-block;
     outline: none;
@@ -464,11 +932,11 @@ a {
 }
 
 .modal [type="file"] + label:hover {
-    background-color: #FF3A4FFF;
+    background-color: rgba(185, 242, 125, 0.18);
 }
 
 #statusMessage {
-    color: yellow;
+    color: var(--accent);
     font-weight: bold;
 }
 
@@ -486,7 +954,7 @@ a {
 
 .button {
     border: none;
-    color: #fff;
+    color: var(--color);
     cursor: default;
     display: inline-block;
     outline: none;
@@ -522,7 +990,7 @@ a {
 }
 
 .formItem > button {
-    color: #ffffff;
+    color: var(--color);
     border: none;
 }
 
@@ -532,11 +1000,11 @@ a {
 
 .formItem > .action {
     position: relative; /* Ensure the pseudo-element is positioned correctly */
-    background-color: #111111;
+    background-color: var(--surface-1);
 }
 
 .formItem > .actionSecondary {
-    background-color: #111111;
+    background-color: var(--surface-1);
 }
 
 #modalBgColorPickerInput {
@@ -555,7 +1023,7 @@ a {
     bottom: 0;
     left: 0;
     width: 100%;
-    border-bottom: 2px solid #1692EA;
+    border-bottom: 2px solid var(--accent);
     transform: scaleX(0);
     transition: transform 200ms;
     transform-origin: 50% 50%;
@@ -565,7 +1033,7 @@ a {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #ffffff;
+    color: var(--color);
     border: none;
 }
 
@@ -575,20 +1043,20 @@ a {
 }
 
 .formItem > .save {
-    /* background-color: #13ac4e; */
-    background-color: #1681d9;
+    background-color: #3e5b3b;
+    color: #f6ffe8;
 }
 
 .formItem > .delete {
-    background-color: #dc3545;
+    background-color: #6a342f;
 }
 
 .formItem > .close {
-    background-color: #333;
+    background-color: var(--surface-2);
 }
 
 .formItem > .save:hover {
-    background-color: #1692EA;
+    background-color: #507447;
 }
 
 
@@ -597,14 +1065,14 @@ a {
 }
 
 .formItem > .close:hover {
-    background-color: #444444
+    background-color: #2b302c
 }
 
 input {
-    border: 1px solid #333;
+    border: 1px solid var(--line-soft);
     outline: none;
-    background-color: #333;
-    color: #f2f2f2;
+    background-color: color-mix(in srgb, var(--color) 6%, transparent);
+    color: var(--color);
     font-size: medium;
 }
 
@@ -613,7 +1081,7 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
   }
 
 .inputBorder {
-    border-top: 1px solid #1692EA;
+    border-top: 1px solid var(--accent);
     margin: 0 2px 0 2px;
     transform: scaleX(0);
     transition: transform 200ms;
@@ -646,7 +1114,7 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
 }
 
 #fetchImageButton svg {
-    fill: rgb(0, 255, 170);
+    fill: var(--accent);
     opacity: 0.8;
     transition: all 0.3s ease;
 }
@@ -673,8 +1141,8 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
 }
 
 .fc-arrows .fc-next.fc-is-active .fc-icon, .fc-arrows .fc-prev.fc-is-active .fc-icon {
-    background-color: rgba(17, 17, 17, 0.9);
-    color: #ccc;
+    background-color: var(--surface-glass-strong);
+    color: rgba(244, 241, 232, 0.78);
 }
 
 .fc-arrows .fc-prev.fc-is-active:hover .fc-icon, .fc-arrows .fc-next.fc-is-active:hover .fc-icon {
@@ -693,36 +1161,185 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     z-index: 3; /* Stay on top */
     top: 0; /* Stay at the top */
     right: 0;
-    background: rgba(0,0,0,1);
-    box-shadow: none;
+    background: var(--surface-glass-strong);
+    border-left: 1px solid var(--line-soft);
+    box-shadow: -24px 0 70px rgba(0, 0, 0, 0.28);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    backdrop-filter: blur(20px) saturate(140%);
     overflow-x: hidden; /* Disable horizontal scroll */
     transition: 360ms; /* 0.5 second transition effect to slide in the sidenav */
-    color: white;
+    color: var(--color);
     display: none;
     justify-content: center;
 }
 
 #foldersContainer {
+    position: relative;
+    box-sizing: border-box;
+    width: 100%;
     padding: 20px 30px; /*todo: nuke this when no folders are present so visually the dials appear centered */
-    display: flex;
-    justify-content: space-between;
-    align-items: start;
-    gap: 20px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    justify-items: stretch;
+    align-items: center;
+    gap: 10px;
+    overflow: hidden;
 }
 
-/* when the folders header is empty add padding to tileContainer so speed dials appear visually centered  */
+body.themeLight.folderRailScrubbing #foldersContainer::after,
+body.themeLight.folderRailDragging #foldersContainer::after,
+body.themeLight #foldersContainer.folders-drag-active::after {
+    content: '';
+    position: absolute;
+    left: 28px;
+    right: 28px;
+    bottom: 18px;
+    height: 1px;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, rgba(201, 177, 136, 0.24), rgba(255, 255, 255, 0.42), rgba(201, 177, 136, 0.16), transparent);
+    box-shadow: 0 0 16px rgba(192, 155, 102, 0.055);
+    opacity: 0.64;
+}
+
+/* when the folders header is empty add padding to tileContainer so deck items appear visually centered  */
 body:not(:has(.folderTitle)) #tileContainer {
     padding-bottom: 82px; /* counters foldersContainer height */
 }
 
 .folders-content {
     display: flex;
-    flex-wrap: wrap;
+    grid-column: 1;
+    justify-self: center;
+    position: relative;
+    isolation: isolate;
+    box-sizing: border-box;
+    width: fit-content;
+    max-width: 100%;
+    height: var(--folder-rail-height);
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
     align-items: center;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    padding-inline: var(--folder-rail-padding-x);
+    scroll-padding-inline: var(--folder-rail-scroll-padding-x);
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    border: 1px solid color-mix(in srgb, var(--color) 10%, transparent);
+    border-radius: var(--folder-rail-radius);
+    background:
+        radial-gradient(120% 180% at 50% 0%, rgba(255, 255, 255, 0.16), transparent 40%),
+        linear-gradient(180deg, color-mix(in srgb, var(--color) 7%, transparent), transparent 74%),
+        color-mix(in srgb, var(--surface-glass-strong) 72%, transparent);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.04),
+        0 14px 38px rgba(0, 0, 0, 0.1);
+    -webkit-backdrop-filter: blur(22px) saturate(160%);
+    backdrop-filter: blur(22px) saturate(160%);
+    transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 28px, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 28px, #000 calc(100% - 28px), transparent);
+}
+
+.folders-content::after {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    border-radius: calc(var(--folder-rail-radius) - 1px);
+    pointer-events: none;
+    z-index: 0;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 42%),
+        radial-gradient(80% 70% at 50% 0%, rgba(255, 255, 255, 0.2), transparent 58%);
+    opacity: 0.52;
+}
+
+.folders-content > * {
+    position: relative;
+    z-index: 1;
+}
+
+.folderRailAtStart .folders-content {
+    -webkit-mask-image: linear-gradient(90deg, #000, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(90deg, #000, #000 calc(100% - 28px), transparent);
+}
+
+.folderRailAtEnd .folders-content {
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 28px, #000);
+    mask-image: linear-gradient(90deg, transparent, #000 28px, #000);
+}
+
+.folderRailAtStart.folderRailAtEnd .folders-content {
+    -webkit-mask-image: none;
+    mask-image: none;
+}
+
+.folderRailScrubbing .folders-content,
+.folderRailDragging .folders-content,
+.folders-drag-active .folders-content {
+    background:
+        radial-gradient(120% 180% at 50% 0%, rgba(255, 255, 255, 0.22), transparent 42%),
+        linear-gradient(180deg, color-mix(in srgb, var(--color) 10%, transparent), transparent 70%),
+        color-mix(in srgb, var(--surface-glass-strong) 86%, transparent);
+    border-color: var(--line-bright);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.08),
+        0 18px 44px rgba(0, 0, 0, 0.16);
+    -webkit-backdrop-filter: blur(24px) saturate(175%);
+    backdrop-filter: blur(24px) saturate(175%);
+}
+
+body.themeLight .folders-content {
+    border-color: rgba(183, 158, 116, 0.14);
+    background:
+        radial-gradient(120% 180% at 50% 0%, rgba(255, 255, 255, 0.58), transparent 42%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(246, 240, 228, 0.34) 72%),
+        rgba(251, 247, 239, 0.62);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.72),
+        inset 0 -1px 0 rgba(183, 158, 116, 0.055),
+        0 12px 34px rgba(172, 138, 91, 0.06);
+}
+
+body.themeLight .folders-content::after {
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.52), transparent 46%),
+        radial-gradient(80% 70% at 50% 0%, rgba(255, 255, 255, 0.48), transparent 62%);
+    opacity: 0.56;
+}
+
+body.themeLight.folderRailScrubbing .folders-content,
+body.themeLight.folderRailDragging .folders-content,
+body.themeLight .folders-drag-active .folders-content {
+    border-color: rgba(183, 158, 116, 0.2);
+    background:
+        radial-gradient(120% 180% at 50% 0%, rgba(255, 255, 255, 0.68), transparent 42%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.62), rgba(246, 240, 228, 0.44) 72%),
+        rgba(251, 247, 239, 0.74);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.84),
+        inset 0 -1px 0 rgba(183, 158, 116, 0.075),
+        0 16px 38px rgba(172, 138, 91, 0.075);
+}
+
+.folderRailDragging .folders-content {
+    scroll-snap-type: none;
+}
+
+.folders-content::-webkit-scrollbar {
+    display: none;
 }
 
 #folders {
-    display: contents;
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    min-width: max-content;
 }
 
 #addFolderIcon {
@@ -734,10 +1351,24 @@ body:not(:has(.folderTitle)) #tileContainer {
 }
 
 #addFolderButton {
+    grid-column: 2;
+    justify-self: start;
     display: var(--show-folders);
+    flex: 0 0 auto;
     line-height: 1;
-    padding: 4px;
-    margin: 8px;
+    padding: 7px;
+    margin: 0 0 0 10px;
+    border: 1px solid transparent;
+    border-radius: var(--folder-control-radius);
+    transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+}
+
+.folderRailScrubbing #addFolderButton,
+.folderRailDragging #addFolderButton,
+.folders-drag-active #addFolderButton,
+#addFolderButton:hover {
+    background: color-mix(in srgb, var(--color) 8%, transparent);
+    border-color: var(--line-soft);
 }
 
 #addFolderButton:hover {
@@ -751,20 +1382,50 @@ body:not(:has(.folderTitle)) #tileContainer {
 /* Header controls container */
 .header-controls {
     display: flex;
+    grid-column: 3;
+    position: static;
+    justify-self: end;
     align-items: center;
     gap: 20px;
+    flex: 0 0 auto;
+    min-width: max-content;
     /* Match the exact height and spacing of folder items */
-    margin: 0 12px; /* Same margin as .folderTitle */
+    margin: 0 0 0 12px; /* Same margin as .folderTitle */
     font-weight: bold; /* Same font-weight as .folderTitle */
     line-height: normal; /* Ensure consistent line height */
     height: 42px;
-    justify-self: end;
 }
 
 .header-controls > * {
     flex-shrink: 0;
     display: flex;
     align-items: center;
+}
+
+@media (max-width: 760px) {
+    #foldersContainer {
+        --folder-rail-height: 52px;
+        --folder-rail-radius: 26px;
+        --folder-rail-scroll-padding-x: 3px;
+        --folder-tab-gap: 3px;
+        --folder-tab-active-padding-x: 18px;
+        padding-inline: 18px;
+        gap: 6px;
+    }
+
+    .folders-content {
+        height: var(--folder-rail-height);
+        padding-inline: var(--folder-rail-padding-x);
+        scroll-padding-inline: var(--folder-rail-scroll-padding-x);
+    }
+
+    #addFolderButton {
+        margin-left: 6px;
+    }
+
+    .header-controls {
+        gap: 12px;
+    }
 }
 
 #settingsBtn {
@@ -875,13 +1536,13 @@ body:not(:has(.folderTitle)) #tileContainer {
 }
 
 #searchInput::placeholder {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--muted);
 }
 
 .searchCloseBtn {
     margin-left: 15px;
     font-size: 22px;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--muted);
     transition: color 0.2s ease;
     flex-shrink: 0;
     line-height: 1;
@@ -893,6 +1554,8 @@ body:not(:has(.folderTitle)) #tileContainer {
 }
 
 #clock {
+    flex: 0 0 auto;
+    min-width: 8ch;
     display: var(--clock);
     color: var(--color);
     opacity: 0.85;
@@ -902,6 +1565,8 @@ body:not(:has(.folderTitle)) #tileContainer {
     white-space: nowrap;
     line-height: 1;
     align-self: center;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
 
     font-weight: 200;
     transition: 160ms ease;
@@ -945,4 +1610,3 @@ body:not(:has(.folderTitle)) #tileContainer {
     vertical-align: middle;
     padding-left: 10px;
 }
-

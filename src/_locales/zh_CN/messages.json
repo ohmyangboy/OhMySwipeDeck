@@ -9,7 +9,7 @@
     "message": "添加网站按钮"
   },
   "addTo": {
-    "message": "添加到快速拨号"
+    "message": "添加到 OhMySwipeDeck"
   },
   "backgroundColor": {
     "message": "背景颜色"
@@ -42,10 +42,10 @@
     "message": "删除"
   },
   "dialRatio": {
-    "message": "拨号格式"
+    "message": "卡片格式"
   },
   "dialSize": {
-    "message": "拨号大小"
+    "message": "卡片大小"
   },
   "edit": {
     "message": "编辑"
@@ -58,11 +58,11 @@
   },
   "extensionDescription": {
     "description": "description of the app, displayed in store",
-    "message": "适用于 Chrome、Edge 和 Firefox 的现代快速拨号"
+    "message": "适用于 Chrome、Edge 和 Firefox 的手势滑动新标签页"
   },
   "extensionName": {
     "description": "title of the app, displayed in store",
-    "message": "Yet Another Speed Dial"
+    "message": "OhMySwipeDeck"
   },
   "help": {
     "message": "帮助"
@@ -80,7 +80,7 @@
     "message": "导入设置..."
   },
   "importExport": {
-    "message": "这将备份或恢复 YASD 设置和缩略图。\n\n请确保您的浏览器书签已通过书签管理器或同步功能单独备份。请注意，导入将替换您当前的设置！\n\nYASD 还可以尝试从 Speed Dial 2 和 FVD 备份文件导入（目前为实验功能）"
+    "message": "这将备份或恢复 OhMySwipeDeck 设置和缩略图。\n\n请确保您的浏览器书签已通过书签管理器或同步功能单独备份。请注意，导入将替换您当前的设置！\n\nOhMySwipeDeck 还可以尝试从 Speed Dial 2 和 FVD 备份文件导入（目前为实验功能）"
   },
   "importExportLink": {
     "message": "导入和导出..."
@@ -101,22 +101,22 @@
     "message": "在后台标签页打开"
   },
   "newDial": {
-    "message": "新建快速拨号..."
+    "message": "新建站点..."
   },
   "newFolder": {
     "message": "新建文件夹..."
   },
   "newInstall1": {
-    "message": "开始使用 Yet Another Speed Dial！"
+    "message": "开始使用 OhMySwipeDeck！"
   },
   "newInstall2": {
-    "message": "⭐ 只需将书签添加到快速拨号文件夹，它们就会出现在这里"
+    "message": "⭐ 只需将书签添加到 OhMySwipeDeck 文件夹，它们就会出现在这里"
   },
   "newInstall3": {
     "message": "✨ 您可以将书签整理到子文件夹中"
   },
   "newInstall4": {
-    "message": "✨ 右键单击拨号以编辑它。您还可以拖放以重新排列"
+    "message": "✨ 右键单击卡片以编辑它。您还可以拖放以重新排列"
   },
   "newPrivate": {
     "message": "在新的无痕窗口中打开"
@@ -170,7 +170,7 @@
     "message": "标题"
   },
   "title": {
-    "message": "快速拨号"
+    "message": "OhMySwipeDeck"
   },
   "uploadImage": {
     "message": "添加图片..."
@@ -183,6 +183,9 @@
   },
   "optionWide": {
     "message": "宽屏"
+  },
+  "optionFlow": {
+    "message": "流"
   },
   "optionXXSmall": {
     "message": "极小"
@@ -213,5 +216,68 @@
   },
   "optionNewDialsFirst": {
     "message": "新建在开头"
+  },
+  "defaultOpen": {
+    "message": "默认打开方式"
+  },
+  "optionOpenCurrent": {
+    "message": "当前标签页"
+  },
+  "optionOpenNewTab": {
+    "message": "新标签页"
+  },
+  "themeMode": {
+    "message": "主题"
+  },
+  "optionThemeSystem": {
+    "message": "跟随系统"
+  },
+  "optionThemeDark": {
+    "message": "深色"
+  },
+  "optionThemeLight": {
+    "message": "浅色"
+  },
+  "openAll": {
+    "message": "全部打开"
+  },
+  "refreshAll": {
+    "message": "刷新全部缩略图..."
+  },
+  "refreshAllTitle": {
+    "message": "刷新全部缩略图？"
+  },
+  "refreshAllMessage": {
+    "message": "这会为当前页面的所有卡片重新获取图片，可能需要一些时间。\n\n该过程会在后台运行；此模式不会重新截图。"
+  },
+  "continue": {
+    "message": "继续"
+  },
+  "importExportTitle": {
+    "message": "导入 / 导出设置"
+  },
+  "capturingImages": {
+    "message": "正在获取图片..."
+  },
+  "resetSettingsConfirm": {
+    "message": "确定要将所有设置重置为默认值吗？这不会修改网站缩略图。"
+  },
+  "importErrorParse": {
+    "message": "错误：无法解析文件。"
+  },
+  "importErrorCreateFoldersSD2": {
+    "message": "SD2 导入失败：无法创建文件夹。"
+  },
+  "importErrorCreateFoldersFVD": {
+    "message": "FVD 导入失败：无法创建文件夹。"
+  },
+  "importErrorCreateFolders": {
+    "message": "错误：无法创建文件夹。"
+  },
+  "importErrorBookmarksDials": {
+    "message": "错误：无法导入书签和卡片。"
+  },
+  "genericErrorTryAgain": {
+    "message": "出了点问题，请重试。"
   }
 }

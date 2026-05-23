@@ -9,7 +9,7 @@
     "message": "Przycisk dodaj stronę"
   },
   "addTo": {
-    "message": "Dodaj do szybkiego wybierania"
+    "message": "Dodaj do OhMySwipeDeck"
   },
   "backgroundColor": {
     "message": "Kolor tła"
@@ -58,11 +58,11 @@
   },
   "extensionDescription": {
     "description": "description of the app, displayed in store",
-    "message": "nowoczesne szybkie wybieranie dla chrome, edge i firefox"
+    "message": "A gesture-first swipe deck for Chrome, Edge, and Firefox"
   },
   "extensionName": {
     "description": "title of the app, displayed in store",
-    "message": "kolejne szybkie wybieranie"
+    "message": "OhMySwipeDeck"
   },
   "help": {
     "message": "Pomoc"
@@ -80,7 +80,7 @@
     "message": "Importuj ustawienia..."
   },
   "importExport": {
-    "message": "To utworzy kopię zapasową lub przywróci ustawienia YASD i miniatury.\n\nUpewnij się, że zakładki przeglądarki są oddzielnie zabezpieczone przez menedżera zakładek lub synchronizację. Uwaga: import zastąpi bieżące ustawienia!\n\nYASD może również spróbować importować z plików kopii zapasowych Speed Dial 2 i FVD (obecnie eksperymentalne)"
+    "message": "To utworzy kopię zapasową lub przywróci ustawienia OhMySwipeDeck i miniatury.\n\nUpewnij się, że zakładki przeglądarki są oddzielnie zabezpieczone przez menedżera zakładek lub synchronizację. Uwaga: import zastąpi bieżące ustawienia!\n\nOhMySwipeDeck może również spróbować importować z plików kopii zapasowych Speed Dial 2 i FVD (obecnie eksperymentalne)"
   },
   "importExportLink": {
     "message": "Import i eksport..."
@@ -101,16 +101,16 @@
     "message": "Otwórz w karcie w tle"
   },
   "newDial": {
-    "message": "Nowe szybkie wybieranie..."
+    "message": "Nowa strona..."
   },
   "newFolder": {
     "message": "Nowy folder..."
   },
   "newInstall1": {
-    "message": "Zacznij korzystać z Yet Another Speed Dial!"
+    "message": "Zacznij korzystać z OhMySwipeDeck!"
   },
   "newInstall2": {
-    "message": "⭐ Po prostu dodaj zakładki do folderu Szybkie wybieranie, a pojawią się tutaj"
+    "message": "⭐ Dodaj zakładki do folderu OhMySwipeDeck, a pojawią się tutaj"
   },
   "newInstall3": {
     "message": "✨ Możesz organizować zakładki w podfoldery"
@@ -170,7 +170,7 @@
     "message": "Tytuł"
   },
   "title": {
-    "message": "Szybkie wybieranie"
+    "message": "OhMySwipeDeck"
   },
   "uploadImage": {
     "message": "Dodaj obraz..."
@@ -183,6 +183,9 @@
   },
   "optionWide": {
     "message": "Szeroki"
+  },
+  "optionFlow": {
+    "message": "Flow"
   },
   "optionXXSmall": {
     "message": "XX-Mały"
@@ -213,5 +216,68 @@
   },
   "optionNewDialsFirst": {
     "message": "Nowe na początku"
+  },
+  "defaultOpen": {
+    "message": "Default Open"
+  },
+  "optionOpenCurrent": {
+    "message": "Current tab"
+  },
+  "optionOpenNewTab": {
+    "message": "New tab"
+  },
+  "themeMode": {
+    "message": "Theme"
+  },
+  "optionThemeSystem": {
+    "message": "Match system"
+  },
+  "optionThemeDark": {
+    "message": "Dark"
+  },
+  "optionThemeLight": {
+    "message": "Light"
+  },
+  "openAll": {
+    "message": "Open all"
+  },
+  "refreshAll": {
+    "message": "Refresh all thumbnails..."
+  },
+  "refreshAllTitle": {
+    "message": "Refresh all thumbnails?"
+  },
+  "refreshAllMessage": {
+    "message": "This will fetch new images for all items on this page. It may take a while.\n\nThis process runs in the background. Screenshots are not taken in this mode."
+  },
+  "continue": {
+    "message": "Continue"
+  },
+  "importExportTitle": {
+    "message": "Import / Export Settings"
+  },
+  "capturingImages": {
+    "message": "Capturing images..."
+  },
+  "resetSettingsConfirm": {
+    "message": "Are you sure you want to reset all settings to their defaults? This will not modify your site thumbnails."
+  },
+  "importErrorParse": {
+    "message": "Error! Unable to parse file."
+  },
+  "importErrorCreateFoldersSD2": {
+    "message": "SD2 import error! Unable to create folders."
+  },
+  "importErrorCreateFoldersFVD": {
+    "message": "FVD import error! Unable to create folders."
+  },
+  "importErrorCreateFolders": {
+    "message": "Error! Unable to create folders."
+  },
+  "importErrorBookmarksDials": {
+    "message": "Error! Unable to import bookmarks and items."
+  },
+  "genericErrorTryAgain": {
+    "message": "Something went wrong. Please try again."
   }
 }

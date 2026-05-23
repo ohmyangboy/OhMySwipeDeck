@@ -9,7 +9,7 @@
     "message": "サイト追加ボタン"
   },
   "addTo": {
-    "message": "スピードダイヤルに追加"
+    "message": "OhMySwipeDeckに追加"
   },
   "backgroundColor": {
     "message": "背景色"
@@ -58,11 +58,11 @@
   },
   "extensionDescription": {
     "description": "description of the app, displayed in store",
-    "message": "Chrome、Edge、Firefox向けの最新スピードダイヤル"
+    "message": "A gesture-first swipe deck for Chrome, Edge, and Firefox"
   },
   "extensionName": {
     "description": "title of the app, displayed in store",
-    "message": "Yet Another Speed Dial"
+    "message": "OhMySwipeDeck"
   },
   "help": {
     "message": "ヘルプ"
@@ -80,7 +80,7 @@
     "message": "設定をインポート..."
   },
   "importExport": {
-    "message": "YASDの設定とサムネイルをバックアップまたは復元します。\n\nブラウザのブックマークは、ブックマークマネージャーまたは同期機能を使用して別途バックアップしてください。インポートすると現在の設定が上書きされます！\n\nYASDは、Speed Dial 2やFVDのバックアップファイルからのインポートも試みることができます（現在は実験的機能）"
+    "message": "OhMySwipeDeckの設定とサムネイルをバックアップまたは復元します。\n\nブラウザのブックマークは、ブックマークマネージャーまたは同期機能を使用して別途バックアップしてください。インポートすると現在の設定が上書きされます！\n\nOhMySwipeDeckは、Speed Dial 2やFVDのバックアップファイルからのインポートも試みることができます（現在は実験的機能）"
   },
   "importExportLink": {
     "message": "インポートとエクスポート..."
@@ -101,16 +101,16 @@
     "message": "バックグラウンドタブで開く"
   },
   "newDial": {
-    "message": "新しいスピードダイヤル..."
+    "message": "新しいサイト..."
   },
   "newFolder": {
     "message": "新しいフォルダ..."
   },
   "newInstall1": {
-    "message": "Yet Another Speed Dialを始めましょう！"
+    "message": "OhMySwipeDeckを始めましょう！"
   },
   "newInstall2": {
-    "message": "⭐ スピードダイヤルフォルダにブックマークを追加するだけで、ここに表示されます"
+    "message": "⭐ ブックマークをOhMySwipeDeckフォルダに追加すると、ここに表示されます"
   },
   "newInstall3": {
     "message": "✨ ブックマークをサブフォルダに整理できます"
@@ -170,7 +170,7 @@
     "message": "タイトル"
   },
   "title": {
-    "message": "スピードダイヤル"
+    "message": "OhMySwipeDeck"
   },
   "uploadImage": {
     "message": "画像を追加..."
@@ -183,6 +183,9 @@
   },
   "optionWide": {
     "message": "横長"
+  },
+  "optionFlow": {
+    "message": "Flow"
   },
   "optionXXSmall": {
     "message": "極小"
@@ -213,5 +216,68 @@
   },
   "optionNewDialsFirst": {
     "message": "新規を最初"
+  },
+  "defaultOpen": {
+    "message": "Default Open"
+  },
+  "optionOpenCurrent": {
+    "message": "Current tab"
+  },
+  "optionOpenNewTab": {
+    "message": "New tab"
+  },
+  "themeMode": {
+    "message": "Theme"
+  },
+  "optionThemeSystem": {
+    "message": "Match system"
+  },
+  "optionThemeDark": {
+    "message": "Dark"
+  },
+  "optionThemeLight": {
+    "message": "Light"
+  },
+  "openAll": {
+    "message": "Open all"
+  },
+  "refreshAll": {
+    "message": "Refresh all thumbnails..."
+  },
+  "refreshAllTitle": {
+    "message": "Refresh all thumbnails?"
+  },
+  "refreshAllMessage": {
+    "message": "This will fetch new images for all items on this page. It may take a while.\n\nThis process runs in the background. Screenshots are not taken in this mode."
+  },
+  "continue": {
+    "message": "Continue"
+  },
+  "importExportTitle": {
+    "message": "Import / Export Settings"
+  },
+  "capturingImages": {
+    "message": "Capturing images..."
+  },
+  "resetSettingsConfirm": {
+    "message": "Are you sure you want to reset all settings to their defaults? This will not modify your site thumbnails."
+  },
+  "importErrorParse": {
+    "message": "Error! Unable to parse file."
+  },
+  "importErrorCreateFoldersSD2": {
+    "message": "SD2 import error! Unable to create folders."
+  },
+  "importErrorCreateFoldersFVD": {
+    "message": "FVD import error! Unable to create folders."
+  },
+  "importErrorCreateFolders": {
+    "message": "Error! Unable to create folders."
+  },
+  "importErrorBookmarksDials": {
+    "message": "Error! Unable to import bookmarks and items."
+  },
+  "genericErrorTryAgain": {
+    "message": "Something went wrong. Please try again."
   }
 }

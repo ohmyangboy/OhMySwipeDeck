@@ -9,7 +9,7 @@
     "message": "Aggiungi sito Button"
   },
   "addTo": {
-    "message": "Aggiungi alla Selezione Rapida"
+    "message": "Aggiungi a OhMySwipeDeck"
   },
   "backgroundColor": {
     "message": "Colore di sfondo"
@@ -42,10 +42,10 @@
     "message": "Elimina"
   },
   "dialRatio": {
-    "message": "Dial Format"
+    "message": "Tile Format"
   },
   "dialSize": {
-    "message": "Dial Size"
+    "message": "Tile Size"
   },
   "edit": {
     "message": "Modificare"
@@ -58,11 +58,11 @@
   },
   "extensionDescription": {
     "description": "description of the app, displayed in store",
-    "message": "una moderna selezione rapida per firefox e chrome"
+    "message": "A gesture-first swipe deck for Chrome, Edge, and Firefox"
   },
   "extensionName": {
     "description": "title of the app, displayed in store",
-    "message": "un'altra chiamata rapida"
+    "message": "OhMySwipeDeck"
   },
   "help": {
     "message": "Aiuto"
@@ -80,7 +80,7 @@
     "message": "Importa impostazioni..."
   },
   "importExport": {
-    "message": "Ciò eseguirà il backup o il ripristino delle impostazioni e delle miniature YASD.\n\nNota, tutte le chiamate rapide sono gestite dal browser come segnalibri. Assicurati che venga eseguito il backup separatamente tramite il gestore dei segnalibri o la sincronizzazione.\n\nATTENZIONE: l'importazione sostituirà le impostazioni correnti."
+    "message": "Ciò eseguirà il backup o il ripristino delle impostazioni e delle miniature OhMySwipeDeck.\n\nNota, tutti gli elementi OhMySwipeDeck sono gestite dal browser come segnalibri. Assicurati che venga eseguito il backup separatamente tramite il gestore dei segnalibri o la sincronizzazione.\n\nATTENZIONE: l'importazione sostituirà le impostazioni correnti."
   },
   "importExportLink": {
     "message": "Importazione e esportazione..."
@@ -101,22 +101,22 @@
     "message": "Apri in una scheda in background"
   },
   "newDial": {
-    "message": "Nuova Selezione Rapida..."
+    "message": "Nuovo sito..."
   },
   "newFolder": {
     "message": "Nuovo Cartella..."
   },
   "newInstall1": {
-    "message": "Inizia con Yet Another Speed Dial!"
+    "message": "Inizia con OhMySwipeDeck!"
   },
   "newInstall2": {
-    "message": "⭐ Aggiungi siti facendo clic sul pulsante in basso o crea un segnalibro nella cartella Chiamata rapida"
+    "message": "⭐ Aggiungi segnalibri alla cartella OhMySwipeDeck e appariranno qui"
   },
   "newInstall3": {
     "message": "✨ I quadranti possono essere modificati facendo clic con il tasto destro su di essi"
   },
   "newInstall4": {
-    "message": "\uD83D\uDC8E Accedi a più impostazioni facendo clic sull'ingranaggio nell'angolo in alto a destra"
+    "message": "💎 Accedi a più impostazioni facendo clic sull'ingranaggio nell'angolo in alto a destra"
   },
   "newPrivate": {
     "message": "Aprire in una nuova finestra privata"
@@ -170,7 +170,7 @@
     "message": "Titolo"
   },
   "title": {
-    "message": "Selezione Rapida"
+    "message": "OhMySwipeDeck"
   },
   "uploadImage": {
     "message": "Carica immagine ..."
@@ -183,6 +183,9 @@
   },
   "optionWide": {
     "message": "Largo"
+  },
+  "optionFlow": {
+    "message": "Flow"
   },
   "optionXXSmall": {
     "message": "XX-Piccolo"
@@ -213,5 +216,68 @@
   },
   "optionNewDialsFirst": {
     "message": "Nuovi all'inizio"
+  },
+  "defaultOpen": {
+    "message": "Default Open"
+  },
+  "optionOpenCurrent": {
+    "message": "Current tab"
+  },
+  "optionOpenNewTab": {
+    "message": "New tab"
+  },
+  "themeMode": {
+    "message": "Theme"
+  },
+  "optionThemeSystem": {
+    "message": "Match system"
+  },
+  "optionThemeDark": {
+    "message": "Dark"
+  },
+  "optionThemeLight": {
+    "message": "Light"
+  },
+  "openAll": {
+    "message": "Open all"
+  },
+  "refreshAll": {
+    "message": "Refresh all thumbnails..."
+  },
+  "refreshAllTitle": {
+    "message": "Refresh all thumbnails?"
+  },
+  "refreshAllMessage": {
+    "message": "This will fetch new images for all items on this page. It may take a while.\n\nThis process runs in the background. Screenshots are not taken in this mode."
+  },
+  "continue": {
+    "message": "Continue"
+  },
+  "importExportTitle": {
+    "message": "Import / Export Settings"
+  },
+  "capturingImages": {
+    "message": "Capturing images..."
+  },
+  "resetSettingsConfirm": {
+    "message": "Are you sure you want to reset all settings to their defaults? This will not modify your site thumbnails."
+  },
+  "importErrorParse": {
+    "message": "Error! Unable to parse file."
+  },
+  "importErrorCreateFoldersSD2": {
+    "message": "SD2 import error! Unable to create folders."
+  },
+  "importErrorCreateFoldersFVD": {
+    "message": "FVD import error! Unable to create folders."
+  },
+  "importErrorCreateFolders": {
+    "message": "Error! Unable to create folders."
+  },
+  "importErrorBookmarksDials": {
+    "message": "Error! Unable to import bookmarks and items."
+  },
+  "genericErrorTryAgain": {
+    "message": "Something went wrong. Please try again."
   }
 }

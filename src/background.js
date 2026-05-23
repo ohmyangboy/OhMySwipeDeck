@@ -1,9 +1,12 @@
-// yet another speed dial
+// OhMySwipeDeck
 // copyright 2019 dev@conceptualspace.net
 // absolutely no warranty is expressed or implied
 
 'use strict';
 
+const swipeDeckFolderTitle = 'OhMySwipeDeck';
+// Keep the old root folder discoverable for users upgrading from the previous name.
+const legacySpeedDialFolderTitle = 'Speed Dial';
 
 // EVENT LISTENERS //
 
@@ -109,7 +112,7 @@ async function handleBookmarkChanged(id, info) {
     // so we always "get" the bookmark to access all its info
     const bookmark = await chrome.bookmarks.get(id)
 
-    // todo: filter changes that arent in the speed dial or subfolder, like moving site out of speed dial
+    // todo: filter changes that arent in the deck or subfolder, like moving site out of the deck
     // todo: debounce the message to any open tabs to rerender or debounce render side?
 
     if (bookmark[0].url) {
@@ -122,8 +125,9 @@ async function handleBookmarkChanged(id, info) {
     			// a pre-existing bookmark is being modified; dont fetch new thumbnails
     			refreshOpen();
     		} else {
-    			// new bookmark needs images
-    			getThumbnails(bookmarkUrl, bookmarkId, parentId, {forcePageReload: true});
+            // New bookmarks use favicons by default. Screenshots are only fetched
+            // when the user explicitly refreshes thumbnails.
+            refreshOpen();
     		}
     	}
     } else {
@@ -153,8 +157,8 @@ async function handleBookmarkChanged(id, info) {
 }
 
 async function handleBookmarkRemoved(id, info) {
-	// todo: handle upsert where speed dial folder is deleted
-	//if (info.node.url && (info.parentId === speedDialId || folderIds.indexOf(info.parentId) !== -1)) {
+	// todo: handle upsert where the OhMySwipeDeck folder is deleted
+	//if (info.node.url && (info.parentId === swipeDeckId || folderIds.indexOf(info.parentId) !== -1)) {
 	if (info.node.url) {
 		// remove the thumbnail from local storage if no other bookmarks share this URL
 		const others = await chrome.bookmarks.search({ url: info.node.url });
@@ -163,7 +167,7 @@ async function handleBookmarkRemoved(id, info) {
 				console.log(err)
 			});
 		}
-	} else if (info.node.title !== "Speed Dial" && info.node.title !== "New Folder") {
+	} else if (![swipeDeckFolderTitle, legacySpeedDialFolderTitle, "New Folder"].includes(info.node.title)) {
 		// folder removed, refresh the tab?
 		//refreshOpen()
 	}
@@ -172,19 +176,19 @@ async function handleBookmarkRemoved(id, info) {
 }
 
 function handleContextMenuClick(info, tab) {
-	if (info.menuItemId === 'addToSpeedDial') {
+	if (info.menuItemId === 'addToSwipeDeck') {
         createBookmarkFromContextMenu(tab)
     }
 }
 
 function handleBrowserAction(tab) {
-	// if tab is a web page bookmark it to speed dial
+	// if tab is a web page bookmark it to OhMySwipeDeck
 	if (tab.url && (tab.url.startsWith('https://') || tab.url.startsWith('http://') || tab.url.startsWith('file://') || tab.url.startsWith('chrome://'))) {
 		createBookmarkFromContextMenu(tab);
 		chrome.action.setBadgeText({text:"✔", tabId:tab.id})
 		chrome.action.setBadgeBackgroundColor({ color: '#13ac4e' }); // Green color
 	} else {
-		//chrome.tabs.create({ url: "https://github.com/conceptualspace/yet-another-speed-dial" });
+		//chrome.tabs.create({ url: "https://github.com/yangbukun/OhMySwipeDeck" });
 	}
 }
 
@@ -327,22 +331,12 @@ async function handleRefreshAll(data) {
 }
 
 async function createBookmarkFromContextMenu(tab) {
-	// get the speed dial folder id
-	let speedDialId = null;
-	const bookmarks = await chrome.bookmarks.search({ title: 'Speed Dial' })
-	if (bookmarks && bookmarks.length) {
-		for (let bookmark of bookmarks) {
-			if (!bookmark.url) {
-				speedDialId = bookmark.id;
-				break;
-			}
-		}
-	}
+	const swipeDeckId = await getSwipeDeckBookmarkFolderId();
 
     // check for doopz
-	if (speedDialId) {
+	if (swipeDeckId) {
 		let match = false;
-		chrome.bookmarks.getSubTree(speedDialId).then(node => {
+		chrome.bookmarks.getSubTree(swipeDeckId).then(node => {
 			for (const bookmark of node[0].children) {
 				if (tab.url === bookmark.url) {
 					match = true;
@@ -351,13 +345,35 @@ async function createBookmarkFromContextMenu(tab) {
 			}
 			if (!match) {
 				chrome.bookmarks.create({
-					parentId: speedDialId,
+					parentId: swipeDeckId,
 					title: tab.title,
 					url: tab.url
 				})
 			}
 		});
 	}
+}
+
+async function getBookmarkFolderByTitle(title) {
+	const bookmarks = await chrome.bookmarks.search({ title });
+	return bookmarks.find(bookmark => !bookmark.url) || null;
+}
+
+async function getSwipeDeckBookmarkFolderId() {
+	let deckFolder = await getBookmarkFolderByTitle(swipeDeckFolderTitle);
+
+	if (!deckFolder) {
+		deckFolder = await getBookmarkFolderByTitle(legacySpeedDialFolderTitle);
+		if (deckFolder) {
+			await chrome.bookmarks.update(deckFolder.id, { title: swipeDeckFolderTitle });
+		}
+	}
+
+	if (!deckFolder) {
+		deckFolder = await chrome.bookmarks.create({ title: swipeDeckFolderTitle });
+	}
+
+	return deckFolder.id;
 }
 
 
@@ -378,13 +394,13 @@ async function handleInstalled(details) {
     if (details.reason === "install") {
         // set uninstall URL
         chrome.runtime.setUninstallURL("https://forms.gle/6vJPx6eaMV5xuxQk9");
-        // todo: detect existing speed dial folder
+        // todo: detect existing OhMySwipeDeck folder
     } else if (details.reason === 'update') {
         // perform any migrations here...
         await runMigrations(details.previousVersion);
 
         // manually specify the version to show release notes for
-        if (isPreviousVersion(details.previousVersion, '3.12.3')) {
+        if (isPreviousVersion(details.previousVersion, '1.0.0')) {
             // Check if user wants to see release notes
             try {
                 const result = await chrome.storage.sync.get('showReleaseNotes');
@@ -410,10 +426,10 @@ async function handleInstalled(details) {
 
         // create context menu
          chrome.contextMenus.create({
-            title: "Add to Speed Dial",
+            title: "Add to OhMySwipeDeck",
             contexts: ["page"],
             documentUrlPatterns: ["https://*/*", "http://*/*", "file://*/*", "chrome://*/*"],
-            id: "addToSpeedDial",
+            id: "addToSwipeDeck",
         });
     } catch (error) {
         console.log("Error managing context menus:", error.message);

@@ -1,4 +1,4 @@
-// yet another speed dial
+// OhMySwipeDeck
 // copyright 2019 dev@conceptualspace.net
 // absolutely no warranty is expressed or implied
 
@@ -17,10 +17,11 @@ Coloris({
     closeLabel: 'OK',
 });
 
-// speed dial
+// swipe deck
 const bookmarksContainerParent = document.getElementById('tileContainer');
 const bookmarksContainer = bookmarksContainerParent
 const foldersContainer = document.getElementById('folders');
+const foldersRail = document.querySelector('.folders-content');
 const addFolderButton = document.getElementById('addFolderButton');
 const menu = document.getElementById('contextMenu');
 const folderMenu = document.getElementById('folderMenu');
@@ -88,6 +89,7 @@ const switchesContainer = document.getElementById("switchesContainer");
 const wallPaperEnabled = document.getElementById("wallpaper");
 const previewContainer = document.getElementById("previewContainer");
 const backgroundColorContainer = document.getElementById("backgroundColorContainer");
+const themeModeInput = document.getElementById("themeMode");
 const largeTilesInput = document.getElementById("largeTiles");
 const rememberFolderInput = document.getElementById("rememberFolder");
 const showTitlesInput = document.getElementById("showTitles");
@@ -98,6 +100,7 @@ const showSettingsBtnInput = document.getElementById("showSettingsBtn");
 const showSearchBtnInput = document.getElementById("showSearchBtn");
 const maxColsInput = document.getElementById("maxcols");
 const defaultSortInput = document.getElementById("defaultSort");
+const defaultOpenInput = document.getElementById("defaultOpen");
 const importExportBtn = document.getElementById("importExportBtn");
 const importExportStatus = document.getElementById('statusMessage');
 const exportBtn = document.getElementById("exportBtn");
@@ -123,7 +126,7 @@ chrome.runtime.onMessage.addListener(handleMessages);
 let cache = {};
 let resizing = false;
 let settings = null;
-let speedDialId = null;
+let swipeDeckId = null;
 let sortable = null;
 let folderNavTimeout = null;
 let targetTileHref = null;
@@ -135,6 +138,12 @@ let targetFolderName = null;
 let targetFolderLink = null;
 let folders = [];
 let currentFolder = null;
+let folderRailSettleTimeout = null;
+let folderRailScrubTarget = null;
+let folderRailScrubStartIndex = null;
+let folderRailScrubDelta = 0;
+let folderDragGrabOffset = null;
+let stopFolderDragPointerSync = null;
 let scrollPos = 0;
 let homeFolderTitle = chrome.i18n.getMessage('home');
 let windowSize = null;
@@ -144,15 +153,35 @@ let boxes = [];
 let hourCycle = 'h12';
 const locale = navigator.language;
 const imageRatio = 1.54;
-const helpUrl = 'https://conceptualspace.github.io/yet-another-speed-dial/';
+const helpUrl = 'https://github.com/yangbukun/OhMySwipeDeck';
+const swipeDeckFolderTitle = 'OhMySwipeDeck';
+// Keep the old root folder discoverable for users upgrading from the previous name.
+const legacySpeedDialFolderTitle = 'Speed Dial';
 let isToastVisible = false;
+const folderRailSettleDelay = 115;
+const systemThemeQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+const themePalettes = {
+    dark: {
+        backgroundColor: '#0d0f0f',
+        textColor: '#f4f1e8',
+    },
+    light: {
+        backgroundColor: '#f4efe6',
+        textColor: '#17201b',
+    },
+};
+const themeDefaultColors = {
+    backgroundColor: new Set(Object.values(themePalettes).map(palette => palette.backgroundColor.toLowerCase())),
+    textColor: new Set(Object.values(themePalettes).map(palette => palette.textColor.toLowerCase())),
+};
 
 let folderIds = [];
 
 let defaults = {
     wallpaper: true,
     wallpaperSrc: 'img/bg.jpg',
-    backgroundColor: '#111111',
+    themeMode: 'system',
+    backgroundColor: '#0d0f0f',
     largeTiles: true,
     rememberFolder: false,
     showTitles: true,
@@ -163,7 +192,8 @@ let defaults = {
     showSearchBtn: true,
     maxCols: '100',
     defaultSort: 'first',
-    textColor: '#ffffff',
+    defaultOpen: 'current',
+    textColor: '#f4f1e8',
     dialSize: 'large',
     dialRatio: 'wide',
     currentFolder: null,
@@ -202,19 +232,67 @@ function updateSearchIconPosition() {
     // This function is kept for compatibility in case it's called elsewhere
 }
 
+function i18n(key) {
+    return chrome.i18n.getMessage(key) || key;
+}
+
 // detect clock settings
 hourCycle = Intl.DateTimeFormat(locale, { hour: 'numeric' }).resolvedOptions().hourCycle;
 
 function displayClock() {
-    clock.textContent = new Date().toLocaleString(locale, { hour: 'numeric', minute: 'numeric', hourCycle: hourCycle });
+    clock.textContent = new Date().toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hourCycle: hourCycle });
+    updateFolderRailLayout();
     setTimeout(displayClock, 10000);
 }
 
 displayClock();
 
+function normalizeColorValue(value) {
+    return typeof value === 'string' ? value.trim().toLowerCase() : '';
+}
+
+function isThemeDefaultColor(settingKey, value) {
+    return !value || themeDefaultColors[settingKey]?.has(normalizeColorValue(value));
+}
+
+function getResolvedThemeMode() {
+    const themeMode = settings?.themeMode || defaults.themeMode;
+    if (themeMode === 'dark' || themeMode === 'light') {
+        return themeMode;
+    }
+    return systemThemeQuery?.matches ? 'dark' : 'light';
+}
+
+function getThemeAwareSettingColor(settingKey) {
+    const palette = themePalettes[getResolvedThemeMode()] || themePalettes.dark;
+    const value = settings?.[settingKey];
+    return isThemeDefaultColor(settingKey, value) ? palette[settingKey] : value;
+}
+
+function applyThemeMode() {
+    const resolvedTheme = getResolvedThemeMode();
+    document.body.classList.toggle('themeLight', resolvedTheme === 'light');
+    document.body.classList.toggle('themeDark', resolvedTheme === 'dark');
+    document.documentElement.dataset.theme = resolvedTheme;
+    Coloris({ themeMode: resolvedTheme });
+    return themePalettes[resolvedTheme] || themePalettes.dark;
+}
+
+function isDefaultWallpaperSrc(src) {
+    if (!src || typeof src !== 'string') {
+        return false;
+    }
+    const cleanSrc = src.split('?')[0];
+    return cleanSrc === defaults.wallpaperSrc || cleanSrc.endsWith(`/${defaults.wallpaperSrc}`);
+}
+
+function getStoredWallpaperSrc(src) {
+    return isDefaultWallpaperSrc(src) ? defaults.wallpaperSrc : src;
+}
+
 function getBookmarks(folderId) {
     chrome.bookmarks.getChildren(folderId).then(result => {
-        if (folderId === speedDialId && !result.length && settings.showFolders) {
+        if (folderId === swipeDeckId && !result.length && settings.showFolders) {
             //noBookmarks.style.display = 'block';
             addFolderButton.style.display = 'none';
         }
@@ -224,12 +302,12 @@ function getBookmarks(folderId) {
     });
 }
 
-async function buildDialPages(speedDialId, currentFolderId) {
+async function buildDialPages(swipeDeckId, currentFolderId) {
     async function getChildren(folderId) {
         return await chrome.bookmarks.getChildren(folderId);
     }
 
-    const children = await getChildren(speedDialId);
+    const children = await getChildren(swipeDeckId);
     if (!children.length) {
         // new install
         addFolderButton.style.display = 'none';
@@ -240,8 +318,8 @@ async function buildDialPages(speedDialId, currentFolderId) {
 
     const folders = children.filter(folder => !folder.url);
 
-    // Include speedDial folder
-    folders.push({ id: speedDialId, title: homeFolderTitle, index: -1 });
+    // Include the root deck folder
+    folders.push({ id: swipeDeckId, title: homeFolderTitle, index: -1 });
 
     // sort folders
     folders.sort((a, b) => {
@@ -256,6 +334,10 @@ async function buildDialPages(speedDialId, currentFolderId) {
         for (let folder of folders) {
             folderLink(folder.title, folder.id);
         }
+        requestAnimationFrame(() => {
+            updateFolderRailLayout();
+            centerFolderInRail(currentFolderId, 'auto');
+        });
     }
 
     // Process the current folder's children first
@@ -274,12 +356,12 @@ async function buildDialPages(speedDialId, currentFolderId) {
     }
 }
 
-async function buildFolderPages(speedDialId) {
+async function buildFolderPages(swipeDeckId) {
     async function getChildren(folderId) {
         return await chrome.bookmarks.getChildren(folderId);
     }
 
-    const children = await getChildren(speedDialId);
+    const children = await getChildren(swipeDeckId);
     if (!children.length) {
         // new install
         addFolderButton.style.display = 'none';
@@ -290,8 +372,8 @@ async function buildFolderPages(speedDialId) {
 
     const folders = children.filter(folder => !folder.url);
 
-    // Include speedDial folder
-    folders.push({ id: speedDialId, title: homeFolderTitle, index: -1 });
+    // Include the root deck folder
+    folders.push({ id: swipeDeckId, title: homeFolderTitle, index: -1 });
 
     // sort folders
     folders.sort((a, b) => {
@@ -306,6 +388,10 @@ async function buildFolderPages(speedDialId) {
         for (let folder of folders) {
             folderLink(folder.title, folder.id);
         }
+        requestAnimationFrame(() => {
+            updateFolderRailLayout();
+            centerFolderInRail(currentFolder, 'auto');
+        });
     }
 
     return
@@ -445,6 +531,285 @@ function showFolder(id) {
     }
 }
 
+function selectFolder(id, options = {}) {
+    if (!id) return false;
+
+    const keepRailPreview = options.keepRailPreview === true;
+
+    if (!keepRailPreview) {
+        clearFolderRailPreview();
+    }
+    showFolder(id);
+    currentFolder = id;
+    scrollPos = 0;
+    bookmarksContainerParent.scrollTop = scrollPos;
+    centerFolderInRail(id);
+
+    if (settings) {
+        settings.currentFolder = id;
+        chrome.storage.local.set({ settings });
+    }
+
+    if (keepRailPreview) {
+        requestAnimationFrame(clearFolderRailPreview);
+    }
+
+    return true;
+}
+
+function normalizeWheelDelta(delta, deltaMode) {
+    if (deltaMode === WheelEvent.DOM_DELTA_LINE) {
+        return delta * 16;
+    }
+    if (deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+        return delta * window.innerWidth;
+    }
+    return delta;
+}
+
+function getFolderTitleElements() {
+    return Array.from(document.querySelectorAll('.folderTitle'));
+}
+
+function getFolderIndex(folderId) {
+    const folders = getFolderTitleElements();
+    return folders.findIndex(folder => folder.getAttribute('folderid') === folderId);
+}
+
+function getFolderRailStepSize(folders) {
+    if (!folders.length) return 48;
+    const totalWidth = folders.reduce((sum, folder) => sum + folder.getBoundingClientRect().width, 0);
+    const averageWidth = totalWidth / folders.length;
+    return Math.max(34, Math.min(64, averageWidth * 0.42));
+}
+
+function getFolderRailMaxScroll() {
+    if (!foldersRail) return 0;
+    return Math.max(0, foldersRail.scrollWidth - foldersRail.clientWidth);
+}
+
+function getFolderVisibleScrollLeft(folder) {
+    if (!foldersRail || !folder) return 0;
+
+    const railRect = foldersRail.getBoundingClientRect();
+    const folderRect = folder.getBoundingClientRect();
+    const inset = 16;
+    let nextScrollLeft = foldersRail.scrollLeft;
+
+    if (folderRect.left < railRect.left + inset) {
+        nextScrollLeft -= (railRect.left + inset) - folderRect.left;
+    } else if (folderRect.right > railRect.right - inset) {
+        nextScrollLeft += folderRect.right - (railRect.right - inset);
+    }
+
+    return Math.min(getFolderRailMaxScroll(), Math.max(0, nextScrollLeft));
+}
+
+function updateFolderRailEdgeState() {
+    if (!foldersRail) return;
+    const maxScroll = getFolderRailMaxScroll();
+    document.body.classList.toggle('folderRailAtStart', foldersRail.scrollLeft <= 1);
+    document.body.classList.toggle('folderRailAtEnd', foldersRail.scrollLeft >= maxScroll - 1);
+}
+
+function updateFolderRailLayout() {
+    requestAnimationFrame(updateFolderRailEdgeState);
+}
+
+function getPointerPoint(event) {
+    const pointer = event?.touches?.[0] || event?.changedTouches?.[0] || event;
+    if (!pointer || typeof pointer.clientX !== 'number' || typeof pointer.clientY !== 'number') {
+        return null;
+    }
+
+    return {
+        x: pointer.clientX,
+        y: pointer.clientY,
+    };
+}
+
+function setFolderDragGrabOffset(event, item) {
+    const point = getPointerPoint(event);
+    if (!point || !item) {
+        folderDragGrabOffset = null;
+        return;
+    }
+
+    const rect = item.getBoundingClientRect();
+    folderDragGrabOffset = {
+        x: point.x - rect.left,
+        y: point.y - rect.top,
+    };
+}
+
+function syncFolderDragFallback(event) {
+    const point = getPointerPoint(event);
+    const fallback = document.querySelector('.folderSortFallback');
+    if (!point || !fallback) return;
+
+    const offset = folderDragGrabOffset || {
+        x: fallback.offsetWidth / 2,
+        y: fallback.offsetHeight / 2,
+    };
+
+    fallback.style.left = `${point.x - offset.x}px`;
+    fallback.style.top = `${point.y - offset.y}px`;
+    fallback.style.transform = 'none';
+}
+
+function startFolderDragPointerSync(event) {
+    stopFolderDragPointerSync?.();
+
+    const update = pointerEvent => syncFolderDragFallback(pointerEvent);
+    document.addEventListener('pointermove', update);
+    document.addEventListener('mousemove', update);
+    document.addEventListener('touchmove', update, { passive: true });
+
+    stopFolderDragPointerSync = () => {
+        document.removeEventListener('pointermove', update);
+        document.removeEventListener('mousemove', update);
+        document.removeEventListener('touchmove', update);
+        stopFolderDragPointerSync = null;
+    };
+
+    requestAnimationFrame(() => syncFolderDragFallback(event));
+}
+
+function stopFolderDragSync() {
+    stopFolderDragPointerSync?.();
+    folderDragGrabOffset = null;
+}
+
+function centerFolderInRail(folderId, behavior = 'smooth') {
+    const folder = document.querySelector(`.folderTitle[folderid="${folderId}"]`);
+    if (!foldersRail || !folder) return;
+
+    foldersRail.scrollTo({
+        left: getFolderVisibleScrollLeft(folder),
+        behavior
+    });
+    requestAnimationFrame(updateFolderRailEdgeState);
+}
+
+function getNearestFolderToRailFocus() {
+    if (!foldersRail) return null;
+
+    const folders = getFolderTitleElements();
+    if (!folders.length) return null;
+
+    let nearest = null;
+    let nearestDistance = Infinity;
+    const railRect = foldersRail.getBoundingClientRect();
+    const focusX = railRect.left + Math.min(railRect.width * 0.45, 360);
+
+    for (let folder of folders) {
+        const rect = folder.getBoundingClientRect();
+        const distance = Math.abs((rect.left + rect.width / 2) - focusX);
+        if (distance < nearestDistance) {
+            nearest = folder;
+            nearestDistance = distance;
+        }
+    }
+
+    return nearest;
+}
+
+function clearFolderRailPreview() {
+    document.body.classList.remove('folderRailScrubbing');
+    document.querySelectorAll('.folderTitle.scrubPreviewFolder').forEach(folder => {
+        folder.classList.remove('scrubPreviewFolder');
+    });
+    folderRailScrubTarget = null;
+    folderRailScrubStartIndex = null;
+    folderRailScrubDelta = 0;
+}
+
+function updateFolderRailPreview(folder) {
+    if (!folder) return null;
+    const nextTarget = folder.getAttribute('folderid');
+    if (nextTarget === folderRailScrubTarget) return folder;
+
+    document.body.classList.add('folderRailScrubbing');
+    document.querySelectorAll('.folderTitle.scrubPreviewFolder').forEach(previewFolder => {
+        previewFolder.classList.remove('scrubPreviewFolder');
+    });
+    folder.classList.add('scrubPreviewFolder');
+    folderRailScrubTarget = nextTarget;
+    centerFolderInRail(nextTarget, 'smooth');
+
+    return folder;
+}
+
+function commitFolderRailScrub() {
+    const nearest = folderRailScrubTarget
+        ? document.querySelector(`.folderTitle[folderid="${folderRailScrubTarget}"]`)
+        : null;
+    if (!nearest) {
+        clearFolderRailPreview();
+        return;
+    }
+
+    const targetId = nearest.getAttribute('folderid');
+    selectFolder(targetId, { keepRailPreview: true });
+}
+
+function shouldIgnoreFolderRailWheel(event) {
+    if (searchContainer.classList.contains('active') || document.body.classList.contains('folderRailDragging')) return true;
+
+    const target = event.target;
+    if (!target || !target.closest) return false;
+
+    return target.closest('.modal')
+        || target.closest('.sidenav')
+        || target.closest('.menu')
+        || target.closest('input, textarea, select, button')
+        || target.closest('#addFolderButton')
+        || target.closest('.settingsCtl')
+        || document.getElementById('foldersContainer').classList.contains('folders-drag-active');
+}
+
+function handleFolderRailWheel(event) {
+    if (shouldIgnoreFolderRailWheel(event) || !foldersRail) return;
+
+    const deltaX = normalizeWheelDelta(event.deltaX, event.deltaMode);
+    const deltaY = normalizeWheelDelta(event.deltaY, event.deltaMode);
+
+    if (Math.abs(deltaX) < 3 || Math.abs(deltaX) < Math.abs(deltaY) * 1.25) {
+        return;
+    }
+
+    const folders = getFolderTitleElements();
+    if (folders.length <= 1) return;
+
+    event.preventDefault();
+    if (getFolderRailMaxScroll() > 0) {
+        foldersRail.scrollLeft += deltaX;
+    }
+
+    if (folderRailScrubStartIndex === null) {
+        folderRailScrubStartIndex = getFolderIndex(folderRailScrubTarget || currentFolder);
+        if (folderRailScrubStartIndex < 0) {
+            folderRailScrubStartIndex = 0;
+        }
+    }
+
+    folderRailScrubDelta += deltaX;
+    const stepSize = getFolderRailStepSize(folders);
+    const indexOffset = Math.round(folderRailScrubDelta / stepSize);
+    const targetIndex = Math.min(
+        folders.length - 1,
+        Math.max(0, folderRailScrubStartIndex + indexOffset)
+    );
+
+    requestAnimationFrame(() => {
+        updateFolderRailEdgeState();
+        updateFolderRailPreview(folders[targetIndex]);
+    });
+
+    clearTimeout(folderRailSettleTimeout);
+    folderRailSettleTimeout = setTimeout(commitFolderRailScrub, folderRailSettleDelay);
+}
+
 function getThumbs(bookmarkUrl) {
     return chrome.storage.local.get(bookmarkUrl)
         .then(result => {
@@ -462,23 +827,19 @@ function printFolderBookmarks() {
 
 function folderLink(title, id) {
     let a = document.createElement('a');
-    if (id === speedDialId) {
+    if (id === swipeDeckId) {
         a.id = "homeFolderLink";
     }
     //a.classList.add('tile');
     a.classList.add('folderTitle');
     a.setAttribute('folderId', id);
-    let linkText = document.createTextNode(title);
+    let linkText = document.createElement('span');
+    linkText.classList.add('folderTitleText');
+    linkText.textContent = title;
     a.appendChild(linkText);
     //a.href = "#"+bookmark.id;
     a.onclick = function () {
-        showFolder(id);
-        currentFolder = id;
-        scrollPos = 0;
-        bookmarksContainerParent.scrollTop = scrollPos;
-
-        settings.currentFolder = id;
-        chrome.storage.local.set({ settings });
+        selectFolder(id);
         //tabMessagePort.postMessage({currentFolder: id});
     };
 
@@ -504,7 +865,7 @@ function saveFolder() {
     if (name.length) {
         chrome.bookmarks.create({
             title: name,
-            parentId: speedDialId
+            parentId: swipeDeckId
         }).then(node => {
             hideModals();
         });
@@ -530,7 +891,7 @@ function refreshThumbnails(url, tileid) {
     let parentId = tileid.split("-")[0];
     let id = tileid.split("-")[1];
 
-    showToast(' Capturing images...')
+    showToast(i18n('capturingImages'))
     // gives the ui time to animate before blocking the process with the bg work
     setTimeout(() => {
         chrome.runtime.sendMessage({ target: 'background', type: 'refreshThumbs', data: { url, id, parentId } });
@@ -548,10 +909,10 @@ function removeFolder() {
         }
 
         if (currentFolder === targetFolder) {
-            currentFolder = speedDialId;;
+            currentFolder = swipeDeckId;;
             bookmarksContainerParent.scrollTop = scrollPos;
-            showFolder(speedDialId);
-            settings.currentFolder = speedDialId;
+            showFolder(swipeDeckId);
+            settings.currentFolder = swipeDeckId;
             chrome.storage.local.set({ settings })
         }
 
@@ -570,7 +931,7 @@ function getChildren(folderId) {
 
 function refreshAllThumbnails() {
     let bookmarks = [];
-    let parent = currentFolder ? currentFolder : speedDialId;
+    let parent = currentFolder ? currentFolder : swipeDeckId;
 
     hideModals();
 
@@ -584,7 +945,7 @@ function refreshAllThumbnails() {
                 }
             }
             //tabMessagePort.postMessage({refreshAll: true, urls});
-            showToast(' Capturing images...')
+            showToast(i18n('capturingImages'))
             // gives the ui time to animate before blocking the process with the bg work
             setTimeout(() => {
                 chrome.runtime.sendMessage({ target: 'background', type: 'refreshAllThumbs', data: { bookmarks } });
@@ -621,21 +982,22 @@ async function printNewSetup() {
     let fragment = document.createDocumentFragment();
 
     // Ensure the container exists
-    let folderContainerEl = document.getElementById(speedDialId);
+    let folderContainerEl = document.getElementById(swipeDeckId);
     if (!folderContainerEl) {
         folderContainerEl = document.createElement('div');
-        folderContainerEl.id = speedDialId;
+        folderContainerEl.id = swipeDeckId;
         folderContainerEl.classList.add('container');
-        folderContainerEl.style.display = currentFolder === speedDialId ? 'flex' : 'none';
+        folderContainerEl.style.display = currentFolder === swipeDeckId ? 'flex' : 'none';
         //folderContainerEl.style.opacity = settings.rememberFolder && currentFolder === parentId ? '0' : '1';
         folderContainerEl.style.opacity = "0";
 
-        if (currentFolder === speedDialId) {
+        if (currentFolder === swipeDeckId) {
             setTimeout(() => {
                 folderContainerEl.style.opacity = "1";
                 animate();
             }, 20);
             document.querySelector(`[folderid="${currentFolder}"]`)?.classList.add('activeFolder');
+            requestAnimationFrame(() => centerFolderInRail(currentFolder, 'auto'));
         }
         bookmarksContainerParent.append(folderContainerEl);
     }
@@ -688,6 +1050,17 @@ function createNewDialButton(parentId) {
     return aNewDial;
 }
 
+function getFaviconUrl(pageUrl, size = 64) {
+    if (!pageUrl || pageUrl.startsWith('file:')) {
+        return chrome.runtime.getURL('icons/icon64.png');
+    }
+
+    const faviconUrl = new URL(chrome.runtime.getURL('/_favicon/'));
+    faviconUrl.searchParams.set('pageUrl', pageUrl);
+    faviconUrl.searchParams.set('size', size.toString());
+    return faviconUrl.toString();
+}
+
 async function printBookmarks(bookmarks, parentId) {
     let fragment = document.createDocumentFragment();
 
@@ -706,7 +1079,7 @@ async function printBookmarks(bookmarks, parentId) {
     // Process bookmarks
     if (bookmarks) {
         for (let bookmark of bookmarks) {
-            if (!bookmark.url && bookmark.title && bookmark.parentId === speedDialId) continue;
+            if (!bookmark.url && bookmark.title && bookmark.parentId === swipeDeckId) continue;
 
             if (bookmark.url?.startsWith("http") || bookmark.url?.startsWith("file:") || bookmark.url?.startsWith("chrome:")) {
                 //let images = thumbnails[bookmark.url] || {};
@@ -723,10 +1096,10 @@ async function printBookmarks(bookmarks, parentId) {
 
                 let content = document.createElement('div');
                 content.setAttribute('id', bookmark.parentId + "-" + bookmark.id);
-                content.classList.add('tile-content');
+                content.classList.add('tile-content', 'favicon-thumb');
                 //content.style.backgroundImage = thumbBg ? `url('${thumbUrl}'), ${thumbBg}` : '';
                 //content.style.backgroundColor = thumbBg ? '' : 'rgba(255, 255, 255, 0.5)';
-                content.style.backgroundColor =  'rgba(255, 255, 255, 0.5)';
+                content.style.backgroundImage = `url("${getFaviconUrl(bookmark.url)}")`;
 
                 let title = document.createElement('div');
                 title.classList.add('tile-title');
@@ -897,7 +1270,7 @@ function showToast(message) {
 
 function buildCreateDialModal(parentId) {
     createDialModalURL.value = '';
-    createDialModalURL.parentId = parentId ? parentId : speedDialId;
+    createDialModalURL.parentId = parentId ? parentId : swipeDeckId;
     createDialModalURL.focus();
 }
 
@@ -1061,7 +1434,6 @@ function createDial() {
         parentId: createDialModalURL.parentId
     }).then(node => {
         hideModals();
-        showToast(' Capturing images...')
     });
 }
 
@@ -1080,6 +1452,28 @@ function openAllTabs() {
             }
         });
     }
+}
+
+function openTile(tile, event) {
+    if (!tile || !tile.href) return false;
+
+    const openInBackground = event?.metaKey || event?.ctrlKey || event?.button === 1;
+    if (openInBackground) {
+        chrome.tabs.create({ url: tile.href, active: false });
+        return true;
+    }
+
+    if (settings.defaultOpen === 'newTab') {
+        chrome.tabs.create({ url: tile.href });
+        return true;
+    }
+
+    if (tile.href.startsWith('chrome:') || tile.href.startsWith('file:')) {
+        chrome.tabs.update({ url: tile.href });
+        return true;
+    }
+
+    return false;
 }
 
 function offscreenCanvasShim(w, h) {
@@ -1347,7 +1741,7 @@ function saveBookmarkSettings() {
                     chrome.storage.local.remove(url)
                 }
                 for (let bookmark of bookmarks) {
-                    let currentParent = currentFolder ? currentFolder : speedDialId
+                    let currentParent = currentFolder ? currentFolder : swipeDeckId
                     if (bookmark.parentId === currentParent) {
                         chrome.bookmarks.update(bookmark.id, {
                             title,
@@ -1356,7 +1750,7 @@ function saveBookmarkSettings() {
                     }
 
                     if (url !== newUrl && toastContent.innerText === '') {
-                        showToast(' Capturing images...')
+                        showToast(i18n('capturingImages'))
                     }
                 }
             })
@@ -1585,11 +1979,14 @@ function addImage(image) {
 
 function applySettings() {
     return new Promise(function (resolve, reject) {
-        // apply settings to speed dial
+        // apply settings to the deck
+        applyThemeMode();
+        const backgroundColor = getThemeAwareSettingColor('backgroundColor');
+        const textColor = getThemeAwareSettingColor('textColor');
 
         if (settings.wallpaper && settings.wallpaperSrc) {
             // perf hack for default gradient bg image. user selected images are data URIs
-            if (settings.wallpaperSrc.length < 65) {
+            if (isDefaultWallpaperSrc(settings.wallpaperSrc)) {
                 // Remove any existing background styles and add the animated gradient class
                 document.body.style.background = '';
                 document.body.style.backgroundSize = '';
@@ -1603,12 +2000,16 @@ function applySettings() {
         } else {
             // Remove the gradient class and apply solid background color
             document.body.classList.remove('gradientBackground');
-            document.body.style.background = settings.backgroundColor;
+            document.body.style.background = backgroundColor;
         }
 
-        if (settings.textColor) {
-            document.documentElement.style.setProperty('--color', settings.textColor);
+        if (textColor) {
+            document.documentElement.style.setProperty('--color', textColor);
         }
+
+        const isFlowDial = settings.dialRatio === "flow";
+        document.body.classList.toggle('flowDial', isFlowDial);
+        document.documentElement.style.setProperty('--image-scaling', isFlowDial ? 'cover' : 'contain');
 
         /*
         if (settings.scaleImages) {
@@ -1620,7 +2021,7 @@ function applySettings() {
         }
         */
 
-        if (settings.maxCols && settings.maxCols !== "100") {
+        if (!isFlowDial && settings.maxCols && settings.maxCols !== "100") {
             //todo cleanup - fixed values
             let dialWidth = 220;
             let dialMargin = 14 * 2; // 18px on each side
@@ -1661,7 +2062,15 @@ function applySettings() {
             layout();
         }
 
-        if (settings.dialSize && settings.dialSize !== "large") {
+        if (isFlowDial) {
+            document.documentElement.style.setProperty('--dial-width', 'auto');
+            document.documentElement.style.setProperty('--dial-height', '52px');
+            document.documentElement.style.setProperty('--dial-content-height', '20px');
+            document.documentElement.style.setProperty('--dial-margin', '0');
+            document.documentElement.style.setProperty('--folder-drop-padding', '60px');
+            document.documentElement.style.setProperty('--flow-dial-min-width', '112px');
+            document.documentElement.style.setProperty('--flow-dial-max-width', '260px');
+        } else if (settings.dialSize && settings.dialSize !== "large") {
             let dialWidth, dialHeight, dialContentHeight, dialMargin, folderDropPadding;
             switch (settings.dialSize) {
                 case "xx-large":
@@ -1757,6 +2166,7 @@ function applySettings() {
 
         // Position search icon based on what's visible
         updateSearchIconPosition();
+        updateFolderRailLayout();
 
         if (!settings.showTitles) {
             document.documentElement.style.setProperty('--title-opacity', '0');
@@ -1774,11 +2184,12 @@ function applySettings() {
         resolve();
 
         // populate settings nav
+        themeModeInput.value = settings.themeMode || defaults.themeMode;
         wallPaperEnabled.checked = settings.wallpaper;
-        color_picker.value = settings.backgroundColor;
-        color_picker_wrapper.style.backgroundColor = settings.backgroundColor;
-        textColor_picker.value = settings.textColor;
-        textColor_picker_wrapper.style.backgroundColor = settings.textColor;
+        color_picker.value = backgroundColor;
+        color_picker_wrapper.style.backgroundColor = backgroundColor;
+        textColor_picker.value = textColor;
+        textColor_picker_wrapper.style.backgroundColor = textColor;
         showTitlesInput.checked = settings.showTitles;
         showCreateDialInput.checked = settings.showAddSite;
         largeTilesInput.checked = settings.largeTiles;
@@ -1790,10 +2201,11 @@ function applySettings() {
         dialSizeInput.value = settings.dialSize;
         dialRatioInput.value = settings.dialRatio;
         defaultSortInput.value = settings.defaultSort;
+        defaultOpenInput.value = settings.defaultOpen;
         rememberFolderInput.checked = settings.rememberFolder;
 
         if (settings.wallpaperSrc) {
-            imgPreview.setAttribute('src', settings.wallpaperSrc);
+            imgPreview.setAttribute('src', getStoredWallpaperSrc(settings.wallpaperSrc));
             //imgPreview.style.display = 'block';
             imgPreview.onload = function (e) {
                 if (settings.wallpaper) {
@@ -1821,7 +2233,8 @@ function applySettings() {
 
 function saveSettings() {
     settings.wallpaper = wallPaperEnabled.checked;
-    settings.wallpaperSrc = imgPreview.src;
+    settings.wallpaperSrc = getStoredWallpaperSrc(imgPreview.getAttribute('src') || imgPreview.src);
+    settings.themeMode = themeModeInput.value;
     settings.backgroundColor = color_picker.value;
     settings.textColor = textColor_picker.value;
     settings.showTitles = showTitlesInput.checked;
@@ -1835,8 +2248,9 @@ function saveSettings() {
     settings.dialSize = dialSizeInput.value;
     settings.dialRatio = dialRatioInput.value;
     settings.defaultSort = defaultSortInput.value;
+    settings.defaultOpen = defaultOpenInput.value;
     settings.rememberFolder = rememberFolderInput.checked;
-    settings.currentFolder = currentFolder ? currentFolder : speedDialId;
+    settings.currentFolder = currentFolder ? currentFolder : swipeDeckId;
 
     applySettings();
 
@@ -1864,17 +2278,21 @@ document.addEventListener("contextmenu", function (e) {
         return;
     }
     hideSettings();
-    if (e.target.className === 'tile-content') {
-        targetNode = e.target.parentElement.parentElement;
-        targetTileHref = e.target.parentElement.parentElement.href;
-        targetTileId = e.target.id;
-        targetTileTitle = e.target.nextElementSibling.innerText;
+    const tileTarget = e.target.closest ? e.target.closest('.tile:not(.createDial)') : null;
+    if (tileTarget && (e.target.classList.contains('tile-content') || e.target.classList.contains('tile-title') || document.body.classList.contains('flowDial'))) {
+        const tileContent = tileTarget.querySelector('.tile-content');
+        const tileTitle = tileTarget.querySelector('.tile-title');
+        targetNode = tileTarget;
+        targetTileHref = tileTarget.href;
+        targetTileId = tileContent?.id;
+        targetTileTitle = tileTitle?.innerText || '';
         showContextMenu(menu, e.pageY, e.pageX);
         return false;
-    } else if (e.target.classList.contains('folderTitle') && e.target.id !== "homeFolderLink") {
-        targetFolderLink = e.target;
-        targetFolder = e.target.attributes.folderId.nodeValue;
-        targetFolderName = e.target.textContent;
+    } else if (e.target.closest && e.target.closest('.folderTitle') && e.target.closest('.folderTitle').id !== "homeFolderLink") {
+        const folderTitle = e.target.closest('.folderTitle');
+        targetFolderLink = folderTitle;
+        targetFolder = folderTitle.attributes.folderId.nodeValue;
+        targetFolderName = folderTitle.textContent;
         showContextMenu(folderMenu, e.pageY, e.pageX);
         return false;
     } else if (e.target === document.body || e.target.className === 'folders' || e.target.className === 'folders-content' || e.target.className === 'container' || e.target.className === 'tileContainer' || e.target.className === 'cta-container' || e.target.className === 'default-content' || e.target.className === 'default-content helpText') {
@@ -1888,15 +2306,10 @@ window.addEventListener("click", e => {
     if (typeof e.target.className === 'string' && e.target.className.indexOf('settingsCtl') >= 0) {
         return;
     }
-    if (e.target.className === 'tile-content' || e.target.className === 'tile-title') {
+    if (e.target.closest && e.target.closest('.tile:not(.createDial)')) {
         let tile = e.target.closest('.tile');
-        if (tile && (tile.href.startsWith('chrome:') || tile.href.startsWith('file:'))) {
+        if (openTile(tile, e)) {
             e.preventDefault();
-            if (e.ctrlKey || e.metaKey) {
-                chrome.tabs.create({ url: tile.href, active: false });
-            } else {
-                chrome.tabs.update({ url: tile.href });
-            }
         }
         return;
     }
@@ -1904,11 +2317,10 @@ window.addEventListener("click", e => {
 });
 
 window.addEventListener("auxclick", e => {
-    if (e.button === 1 && (e.target.className === 'tile-content' || e.target.className === 'tile-title')) {
+    if (e.button === 1 && e.target.closest && e.target.closest('.tile:not(.createDial)')) {
         let tile = e.target.closest('.tile');
-        if (tile && (tile.href.startsWith('chrome:') || tile.href.startsWith('file:'))) {
+        if (openTile(tile, e)) {
             e.preventDefault();
-            chrome.tabs.create({ url: tile.href, active: false });
         }
     }
 });
@@ -1916,7 +2328,7 @@ window.addEventListener("auxclick", e => {
 // listen for menu item
 window.addEventListener("mousedown", e => {
     hideMenus();
-    if (e.target.type === 'text' || e.target.id === 'maxcols' || e.target.id === 'defaultSort' || e.target.id === 'dialSize' || e.target.id === 'dialRatio') {
+    if (e.target.type === 'text' || e.target.id === 'themeMode' || e.target.id === 'maxcols' || e.target.id === 'defaultSort' || e.target.id === 'defaultOpen' || e.target.id === 'dialSize' || e.target.id === 'dialRatio') {
         return
     }
     if (e.target.className.baseVal === 'gear') {
@@ -2100,6 +2512,10 @@ modalImgInput.onchange = function () {
     });
 };
 
+themeModeInput.oninput = function (e) {
+    saveSettings()
+}
+
 
 maxColsInput.oninput = function (e) {
     saveSettings()
@@ -2118,6 +2534,10 @@ defaultSortInput.oninput = function (e) {
         processRefresh();
         saveSettings()
     }
+}
+
+defaultOpenInput.oninput = function (e) {
+    saveSettings()
 }
 
 wallPaperEnabled.oninput = function (e) {
@@ -2271,19 +2691,19 @@ function prepareExportV1() {
         const dateString = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
 
         exportBtn.setAttribute('href', URL.createObjectURL(blob));
-        exportBtn.download = `yasd-export-${dateString}.json`;
+        exportBtn.download = `OhMySwipeDeck-export-${dateString}.json`;
         exportBtn.classList.remove('disabled');
 
     });
 }
 
 function prepareExport() {
-    // exports yasd json file that includes all bookmarks within the root speed dial folder, along with the yasd settings and thumbnails from storage
+    // exports an OhMySwipeDeck json file that includes all bookmarks within the root deck folder, along with settings and thumbnails from storage
     // in the following format:
 
     /*
-    const yasdJson = {
-        "yasd": {
+    const swipeDeckJson = {
+        "ohMySwipeDeck": {
             "bookmarks":[
                 {"id":123,"title":"Site Title","url":"https://www.website.com","index":1,"folderid":3}
             ],
@@ -2302,9 +2722,9 @@ function prepareExport() {
     }
     */
 
-    let yasdJson = {
-        yasd: {
-            version: 3,
+    let swipeDeckJson = {
+        ohMySwipeDeck: {
+            version: 1,
             bookmarks: [],
             folders: [],
             settings: {},
@@ -2312,12 +2732,12 @@ function prepareExport() {
         }
     };
 
-    // Get bookmarks and folders within the speed dial folder
-    chrome.bookmarks.getSubTree(speedDialId).then(bookmarkTreeNodes => {
+    // Get bookmarks and folders within the OhMySwipeDeck folder
+    chrome.bookmarks.getSubTree(swipeDeckId).then(bookmarkTreeNodes => {
         function traverseBookmarks(nodes, parentId = null) {
             nodes.forEach(node => {
                 if (node.url) {
-                    yasdJson.yasd.bookmarks.push({
+                    swipeDeckJson.ohMySwipeDeck.bookmarks.push({
                         id: node.id,
                         title: node.title,
                         url: node.url,
@@ -2325,7 +2745,7 @@ function prepareExport() {
                         folderid: parentId
                     });
                 } else {
-                    yasdJson.yasd.folders.push({
+                    swipeDeckJson.ohMySwipeDeck.folders.push({
                         id: node.id,
                         title: node.title,
                         index: node.index
@@ -2338,17 +2758,17 @@ function prepareExport() {
         }
         traverseBookmarks(bookmarkTreeNodes[0].children);
 
-        // Get YASD settings and thumbnails from storage
+        // Get OhMySwipeDeck settings and thumbnails from storage
         chrome.storage.local.get(null).then(items => {
             for (const [key, value] of Object.entries(items)) {
                 if (key.startsWith('settings')) {
-                    yasdJson.yasd.settings[key] = value;
+                    swipeDeckJson.ohMySwipeDeck.settings[key] = value;
                 } else if (key.startsWith('http') || key.startsWith('file:') || key.startsWith('chrome:')) {
                     let thumbnails = [];
                     if (value.thumbnails && value.thumbnails.length) {
                         thumbnails.push(value.thumbnails[value.thumbIndex]);
                     }
-                    yasdJson.yasd.dials.push({
+                    swipeDeckJson.ohMySwipeDeck.dials.push({
                         [key]: {
                             thumbnails: thumbnails,
                             thumbIndex: 0,
@@ -2359,12 +2779,12 @@ function prepareExport() {
             }
 
             // Save as file; requires downloads permission
-            const blob = new Blob([JSON.stringify(yasdJson)], { type: 'application/json' });
+            const blob = new Blob([JSON.stringify(swipeDeckJson)], { type: 'application/json' });
             const today = new Date();
-            const dateString = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}-v3`;
+            const dateString = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
 
             exportBtn.setAttribute('href', URL.createObjectURL(blob));
-            exportBtn.download = `yasd-export-${dateString}.json`;
+            exportBtn.download = `OhMySwipeDeck-export-${dateString}.json`;
             exportBtn.classList.remove('disabled');
         });
     });
@@ -2384,7 +2804,7 @@ helpBtn.onclick = function () {
 }
 
 resetSettingsBtn.onclick = function () {
-    if (confirm('Are you sure you want to reset all settings to their defaults? This will not modify your site thumbnails.')) {
+    if (confirm(i18n('resetSettingsConfirm'))) {
         settings = JSON.parse(JSON.stringify(defaults));
         chrome.storage.local.set({ settings }).then(() => {
             applySettings();
@@ -2401,7 +2821,7 @@ function parseJson(event) {
         return JSON.parse(event.target.result);
     } catch (err) {
         console.log(err);
-        importExportStatus.innerText = "Error! Unable to parse file.";
+        importExportStatus.innerText = i18n('importErrorParse');
         return null;
     }
 }
@@ -2460,7 +2880,7 @@ importFileInput.onchange = function (event) {
         let json = parseJson(event);
         if (!json) return;
 
-        // quiet the listeners so yasd doesnt go crazy
+        // quiet the listeners so imports do not trigger repeated thumbnail refreshes
         chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: false } });
         //todo: proceed once we get a response
         //todo: re-enable listener when import complete
@@ -2470,10 +2890,15 @@ importFileInput.onchange = function (event) {
             importFromSD2(json);
         } else if (json.db) {
             importFromFVD(json);
+        } else if (json.ohMySwipeDeck) {
+            importFromOhMySwipeDeck(json.ohMySwipeDeck);
+        } else if (json.ohMySpeedDial) {
+            // Backward compatibility with exports made before the project rename.
+            importFromOhMySwipeDeck(json.ohMySpeedDial);
         } else if (json.yasd) {
-            importFromYASD(json);
+            importFromLegacyExport(json.yasd);
         } else {
-            importFromOldYASD(json);
+            importFromOldLegacyExport(json);
         }
     };
 
@@ -2498,16 +2923,16 @@ function importFromSD2(json) {
         // Create groups and bookmarks
         let groupPromises = groups.map(group => {
             if (group.id === 0) {
-                return Promise.resolve(speedDialId);
+                return Promise.resolve(swipeDeckId);
             } else {
                 return chrome.bookmarks.search({ title: group.title }).then(existingGroups => {
-                    const matchingGroups = existingGroups.filter(group => group.parentId === speedDialId);
+                    const matchingGroups = existingGroups.filter(group => group.parentId === swipeDeckId);
                     if (matchingGroups.length > 0) {
                         return matchingGroups[0].id;
                     } else {
                         return chrome.bookmarks.create({
                             title: group.title,
-                            parentId: speedDialId
+                            parentId: swipeDeckId
                         }).then(node => node.id);
                     }
                 });
@@ -2537,12 +2962,12 @@ function importFromSD2(json) {
             chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
         }).catch(err => {
             console.log(err)
-            importExportStatus.innerText = "SD2 import error! Unable to create folders."
+            importExportStatus.innerText = i18n('importErrorCreateFoldersSD2')
         });
 
     }).catch(err => {
         console.log(err)
-        importExportStatus.innerText = "Something went wrong. Please try again"
+        importExportStatus.innerText = i18n('genericErrorTryAgain')
     });
 }
 
@@ -2563,16 +2988,16 @@ function importFromFVD(json) {
         // Create groups and bookmarks
         let groupPromises = groups.map(group => {
             if (group.id === 1) {
-                return Promise.resolve(speedDialId);
+                return Promise.resolve(swipeDeckId);
             } else {
                 return chrome.bookmarks.search({ title: group.title }).then(existingGroups => {
-                    const matchingGroups = existingGroups.filter(group => group.parentId === speedDialId);
+                    const matchingGroups = existingGroups.filter(group => group.parentId === swipeDeckId);
                     if (matchingGroups.length > 0) {
                         return matchingGroups[0].id;
                     } else {
                         return chrome.bookmarks.create({
                             title: group.title,
-                            parentId: speedDialId
+                            parentId: swipeDeckId
                         }).then(node => node.id);
                     }
                 });
@@ -2602,43 +3027,40 @@ function importFromFVD(json) {
             chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
         }).catch(err => {
             console.log(err);
-            importExportStatus.innerText = "FVD import error! Unable to create folders.";
+            importExportStatus.innerText = i18n('importErrorCreateFoldersFVD');
         });
 
     }).catch(err => {
         console.log(err);
-        importExportStatus.innerText = "Something went wrong. Please try again";
+        importExportStatus.innerText = i18n('genericErrorTryAgain');
     });
 }
 
-function importFromYASD(json) {
-    // import from yasd v3 format:
-    let yasdData = json.yasd;
-        
+function importFromOhMySwipeDeck(swipeDeckData) {
     // Clear previous settings and import new data
     chrome.storage.local.clear().then(() => {
         // Store settings
-        if (yasdData.settings) {
-            chrome.storage.local.set({ settings: yasdData.settings });
+        if (swipeDeckData.settings) {
+            chrome.storage.local.set({ settings: swipeDeckData.settings });
         }
 
         // Store dials
-        let dialPromises = yasdData.dials.map(dial => {
+        let dialPromises = swipeDeckData.dials.map(dial => {
             let url = Object.keys(dial)[0];
             let dialData = dial[url];
             return chrome.storage.local.set({ [url]: dialData });
         });
 
         // Create folders and get their IDs
-        let folderPromises = yasdData.folders.sort((a, b) => a.index - b.index).map(folder => {
+        let folderPromises = swipeDeckData.folders.sort((a, b) => a.index - b.index).map(folder => {
             return chrome.bookmarks.search({ title: folder.title }).then(existingFolders => {
-                const matchingFolders = existingFolders.filter(f => f.parentId === speedDialId);
+                const matchingFolders = existingFolders.filter(f => f.parentId === swipeDeckId);
                 if (matchingFolders.length > 0) {
                     return { oldId: folder.id, newId: matchingFolders[0].id };
                 } else {
                     return chrome.bookmarks.create({
                         title: folder.title,
-                        parentId: speedDialId
+                        parentId: swipeDeckId
                     }).then(node => {
                         return { oldId: folder.id, newId: node.id };
                     });
@@ -2653,8 +3075,8 @@ function importFromYASD(json) {
             });
 
             // Create bookmarks using the new folder IDs
-            let bookmarkPromises = yasdData.bookmarks.map(bookmark => {
-                let parentId = folderIdMap[bookmark.folderid] || speedDialId;
+            let bookmarkPromises = swipeDeckData.bookmarks.map(bookmark => {
+                let parentId = folderIdMap[bookmark.folderid] || swipeDeckId;
                 return chrome.bookmarks.search({ url: bookmark.url }).then(existingBookmarks => {
                     let existsInFolder = existingBookmarks.some(b => b.parentId === parentId);
                     if (!existsInFolder) {
@@ -2674,20 +3096,24 @@ function importFromYASD(json) {
                 chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
             }).catch(err => {
                 console.log(err);
-                importExportStatus.innerText = "Error! Unable to import bookmarks and dials.";
+                importExportStatus.innerText = i18n('importErrorBookmarksDials');
             });
         }).catch(err => {
             console.log(err);
-            importExportStatus.innerText = "Error! Unable to create folders.";
+            importExportStatus.innerText = i18n('importErrorCreateFolders');
         });
     }).catch(err => {
         console.log(err);
-        importExportStatus.innerText = "Something went wrong. Please try again.";
+        importExportStatus.innerText = i18n('genericErrorTryAgain');
     });
 }
 
-function importFromOldYASD(json) {
-    // import from old yasd format
+function importFromLegacyExport(legacyData) {
+    importFromOhMySwipeDeck(legacyData);
+}
+
+function importFromOldLegacyExport(json) {
+    // import from old extension storage format
     chrome.storage.local.clear().then(() => {
         chrome.storage.local.set(json).then(result => {
             hideModals();
@@ -2697,11 +3123,11 @@ function importFromOldYASD(json) {
             chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
         }).catch(err => {
             console.log(err)
-            importExportStatus.innerText = "Error! Unable to parse file."
+            importExportStatus.innerText = i18n('importErrorParse')
         });
     }).catch(err => {
         console.log(err)
-        importExportStatus.innerText = "Error! Please try again"
+        importExportStatus.innerText = i18n('genericErrorTryAgain')
     })
 }
 
@@ -2739,12 +3165,7 @@ function dragenterHandler(ev) {
     clearTimeout(folderNavTimeout);
     if (currentFolder !== folderId) {
         folderNavTimeout = setTimeout(() => {
-            currentFolder = folderId;
-            showFolder(currentFolder);
-            scrollPos = 0;
-            bookmarksContainerParent.scrollTop = scrollPos;
-            settings.currentFolder = folderId;
-            chrome.storage.local.set({ settings });
+            selectFolder(folderId);
         }, 350);
     }
 }
@@ -2780,7 +3201,7 @@ function dewrap(str) {
     // unlike folder tabs, main dial container doesnt include the folder id
     // todo: cleanup
     if (str === "wrap") {
-        return speedDialId
+        return swipeDeckId
     } else {
         return str
     }
@@ -2810,13 +3231,13 @@ function onEndHandler(evt) {
             // sortable's position doesn't match the dom's drop target
             // this may happen if the tile is dragged over a sortable list but then ultimately dropped somewhere else
             // for example directly on the folder name, or directly onto the new dial button. so use the folder target if available or else currentFolder
-            toParentId = droppedOnFolderId || currentFolder || speedDialId;
+            toParentId = droppedOnFolderId || currentFolder || swipeDeckId;
         }
 
         if (fromParentId === toParentId && fromParentId !== currentFolder) {
             // occurs when there is no sortable target -- for example dropping the dial onto the folder name
             // or some space of the page outside the sortable container element
-            toParentId = droppedOnFolderId || currentFolder || speedDialId;
+            toParentId = droppedOnFolderId || currentFolder || swipeDeckId;
         }
 
         // if the sibling's parent doesnt match the parent we are moving to discard this sibling
@@ -2837,6 +3258,7 @@ function onEndHandler(evt) {
                 let id = evt.clone.attributes.folderid.value;
                 let newSiblingId = evt.item.nextElementSibling ? evt.item.nextElementSibling.attributes.folderid.value : null;
                 moveFolder(id, oldIndex, newIndex, newSiblingId)
+                requestAnimationFrame(() => centerFolderInRail(currentFolder, 'smooth'));
             }
         }
     }
@@ -2844,7 +3266,7 @@ function onEndHandler(evt) {
 
 const processRefresh = debounce(({ foldersOnly = false } = {}) => {
     if (foldersOnly) {
-        buildFolderPages(speedDialId)
+        buildFolderPages(swipeDeckId)
     } else {
         // prevent page scroll on refresh
         // react where are you...
@@ -2855,46 +3277,38 @@ const processRefresh = debounce(({ foldersOnly = false } = {}) => {
 
         //bookmarksContainer.style.opacity = "0";
 
-        //getBookmarks(speedDialId)
-        buildDialPages(speedDialId, currentFolder).then(() => {
+        //getBookmarks(swipeDeckId)
+        buildDialPages(swipeDeckId, currentFolder).then(() => {
             // rebuild boxes[] with the new dom nodes for the layout animations
             animate();
         });
     }
 }, 650, true);
 
-function getSpeedDialId() {
-    return new Promise((resolve, reject) => {
-        chrome.bookmarks.search({ title: 'Speed Dial' }).then(result => {
-            if (result) {
-                for (let bookmark of result) {
-                    if (!bookmark.url) {
-                        speedDialId = bookmark.id;
-                        break;
-                    }
-                }
-            }
-            if (speedDialId) {
-                chrome.bookmarks.getChildren(speedDialId).then(results => {
-                    for (let result of results) {
-                        if (!result.url && result.title) {
-                            folderIds.push(result.id);
-                        }
-                    }
-                    resolve()
-                })
-            } else {
-                chrome.bookmarks.create({ title: 'Speed Dial' }).then(result => {
-                    speedDialId = result.id;
-                    resolve();
-                }, error => {
-                    reject(error);
-                });
-            }
-        }, error => {
-            reject(error)
-        });
-    });
+async function getBookmarkFolderByTitle(title) {
+    const results = await chrome.bookmarks.search({ title });
+    return results.find(bookmark => !bookmark.url) || null;
+}
+
+async function getSwipeDeckId() {
+    let deckFolder = await getBookmarkFolderByTitle(swipeDeckFolderTitle);
+
+    if (!deckFolder) {
+        deckFolder = await getBookmarkFolderByTitle(legacySpeedDialFolderTitle);
+        if (deckFolder) {
+            await chrome.bookmarks.update(deckFolder.id, { title: swipeDeckFolderTitle });
+        }
+    }
+
+    if (!deckFolder) {
+        deckFolder = await chrome.bookmarks.create({ title: swipeDeckFolderTitle });
+    }
+
+    swipeDeckId = deckFolder.id;
+    const results = await chrome.bookmarks.getChildren(swipeDeckId);
+    folderIds = results
+        .filter(result => !result.url && result.title)
+        .map(result => result.id);
 }
 
 // Preload the image before setting the background
@@ -2992,6 +3406,7 @@ function setBackgroundImages(thumbnails) {
 function batchApplyImages(elements) {
     requestAnimationFrame(() => {
         elements.forEach(({ element, thumb }) => {
+            element.classList.remove('favicon-thumb');
             element.style.backgroundColor = "unset";
             element.style.backgroundImage = `url('${thumb.thumbnail}'), ${thumb.bgColor}`;
         });
@@ -3025,10 +3440,24 @@ function onResize() {
     if (!resizing) {
         requestAnimationFrame(() => {
             layout();
+            updateFolderRailLayout();
+            centerFolderInRail(currentFolder, 'auto');
             resizing = false;
         });
         resizing = true;
     }
+}
+
+function handleSystemThemeChange() {
+    if (settings && (!settings.themeMode || settings.themeMode === 'system')) {
+        applySettings();
+    }
+}
+
+if (systemThemeQuery?.addEventListener) {
+    systemThemeQuery.addEventListener('change', handleSystemThemeChange);
+} else if (systemThemeQuery?.addListener) {
+    systemThemeQuery.addListener(handleSystemThemeChange);
 }
 
 function init() {
@@ -3065,14 +3494,14 @@ function init() {
             */
         }
 
-        getSpeedDialId().then(() => {
+        getSwipeDeckId().then(() => {
             if (settings.rememberFolder && settings.currentFolder
                 && folderIds.includes(settings.currentFolder)) {
                 currentFolder = settings.currentFolder;
             } else {
-                currentFolder = speedDialId;
+                currentFolder = swipeDeckId;
             }
-            applySettings().then(() => buildDialPages(speedDialId, currentFolder));
+            applySettings().then(() => buildDialPages(swipeDeckId, currentFolder));
         }, error => {
             console.log(error);
         });
@@ -3087,17 +3516,49 @@ function init() {
     foldersContainerEl.addEventListener('dragenter', folderContainerDragEnter);
     foldersContainerEl.addEventListener('dragleave', folderContainerDragLeave);
     foldersContainerEl.addEventListener('dragover', folderContainerDragOver);
+    window.addEventListener('wheel', handleFolderRailWheel, { passive: false });
+    foldersRail.addEventListener('scroll', () => requestAnimationFrame(updateFolderRailEdgeState), { passive: true });
 
-    new Sortable(foldersContainer, {
+    sortable = new Sortable(foldersContainer, {
         animation: 150,
+        direction: 'horizontal',
         forceFallback: true,
-        fallbackTolerance: 4,
+        fallbackOnBody: true,
+        fallbackTolerance: 3,
+        swapThreshold: 0.48,
+        invertedSwapThreshold: 0.7,
+        scroll: true,
+        scrollSensitivity: 64,
+        scrollSpeed: 12,
         filter: "#homeFolderLink",
-        ghostClass: 'selected',
-        onMove: function (evt) {
-            return evt.related.id !== 'homeFolderLink';
+        ghostClass: 'folderSortGhost',
+        fallbackClass: 'folderSortFallback',
+        dragClass: 'dragging',
+        chosenClass: 'folderSortChosen',
+        onChoose: function (evt) {
+            setFolderDragGrabOffset(evt.originalEvent, evt.item);
         },
-        onEnd: onEndHandler
+        onStart: function (evt) {
+            clearTimeout(folderRailSettleTimeout);
+            clearTimeout(folderNavTimeout);
+            clearFolderRailPreview();
+            document.body.classList.add('folderRailDragging');
+            document.getElementById('foldersContainer').classList.remove('folders-drag-active');
+            document.querySelectorAll('.folderTitle.drag-hover').forEach(el => el.classList.remove('drag-hover'));
+            startFolderDragPointerSync(evt.originalEvent);
+        },
+        onMove: function (evt) {
+            return !evt.related || evt.related.id !== 'homeFolderLink';
+        },
+        onEnd: function (evt) {
+            stopFolderDragSync();
+            document.body.classList.remove('folderRailDragging');
+            onEndHandler(evt);
+            requestAnimationFrame(() => centerFolderInRail(currentFolder, 'smooth'));
+        },
+        onUnchoose: function () {
+            stopFolderDragSync();
+        }
     });
 
     window.addEventListener('resize', onResize);

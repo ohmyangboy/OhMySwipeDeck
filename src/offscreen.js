@@ -355,7 +355,7 @@ function resizeImage(image, screenshot = false, isFallback = false) {
                         sHeight = sWidth / targetRatio;
                     }
                 } else if (sRatio < targetRatio && sRatio > (targetRatio - tolerance)) {
-                    // if image aspect ratio is very close to the speed dial aspect ratio crop it to fit
+                    // if image aspect ratio is very close to the deck item aspect ratio crop it to fit
                     // todo: maybe we can do this programmatically with css imagefit so we dont overly crop images when user wants square format
 
                     // Aspect is narrower, crop top and bottom

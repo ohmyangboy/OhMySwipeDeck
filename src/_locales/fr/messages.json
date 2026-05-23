@@ -9,7 +9,7 @@
     "message": "Bouton Ajouter de site"
   },
   "addTo": {
-    "message": "Ajouter à la Speed Dial"
+    "message": "Ajouter à OhMySwipeDeck"
   },
   "backgroundColor": {
     "message": "Contexte Couleur"
@@ -42,10 +42,10 @@
     "message": "Supprimer"
   },
   "dialRatio": {
-    "message": "Dial Format"
+    "message": "Tile Format"
   },
   "dialSize": {
-    "message": "Dial Size"
+    "message": "Tile Size"
   },
   "edit": {
     "message": "Éditer"
@@ -58,11 +58,11 @@
   },
   "extensionDescription": {
     "description": "description of the app, displayed in store",
-    "message": "un cadran de vitesse moderne pour firefox et chrome"
+    "message": "A gesture-first swipe deck for Chrome, Edge, and Firefox"
   },
   "extensionName": {
     "description": "title of the app, displayed in store",
-    "message": "encore un autre speed dial"
+    "message": "OhMySwipeDeck"
   },
   "help": {
     "message": "Aide"
@@ -80,7 +80,7 @@
     "message": "Importer les paramètres..."
   },
   "importExport": {
-    "message": "Cela sauvegardera ou restaurera les paramètres et les vignettes YASD.\n\nNotez que tous les numéros abrégés sont gérés par le navigateur sous forme de signets. Assurez-vous qu'ils sont sauvegardés séparément via le gestionnaire de signets ou la synchronisation.\n\nAVERTISSEMENT : L'importation remplacera vos paramètres actuels."
+    "message": "Cela sauvegardera ou restaurera les paramètres et les vignettes OhMySwipeDeck.\n\nNotez que tous les éléments OhMySwipeDeck sont gérés par le navigateur sous forme de signets. Assurez-vous qu'ils sont sauvegardés séparément via le gestionnaire de signets ou la synchronisation.\n\nAVERTISSEMENT : L'importation remplacera vos paramètres actuels."
   },
   "importExportLink": {
     "message": "Importer et exporter..."
@@ -101,22 +101,22 @@
     "message": "Ouvrir dans un onglet d'arrière-plan"
   },
   "newDial": {
-    "message": "Nouveau Speed Dial..."
+    "message": "Nouveau site..."
   },
   "newFolder": {
     "message": "Nouveau Dossier..."
   },
   "newInstall1": {
-    "message": "Lancez-vous avec Yet Another Speed Dial!"
+    "message": "Lancez-vous avec OhMySwipeDeck!"
   },
   "newInstall2": {
-    "message": "⭐ Ajoutez des sites en cliquant sur le bouton ci-dessous, ou créez un signet dans le dossier Speed Dial"
+    "message": "⭐ Ajoutez des favoris au dossier OhMySwipeDeck et ils apparaîtront ici"
   },
   "newInstall3": {
     "message": "✨ Les cadrans peuvent être modifiés en faisant un clic droit"
   },
   "newInstall4": {
-    "message": "\uD83D\uDC8E Accédez à plus de paramètres en cliquant sur l'icône dans le coin supérieur droit"
+    "message": "💎 Accédez à plus de paramètres en cliquant sur l'icône dans le coin supérieur droit"
   },
   "newPrivate": {
     "message": "Ouvrir dans une nouvelle fenêtre privée"
@@ -170,7 +170,7 @@
     "message": "Titre"
   },
   "title": {
-    "message": "Speed Dial"
+    "message": "OhMySwipeDeck"
   },
   "uploadImage": {
     "message": "Télécharger l'image ..."
@@ -183,6 +183,9 @@
   },
   "optionWide": {
     "message": "Large"
+  },
+  "optionFlow": {
+    "message": "Flow"
   },
   "optionXXSmall": {
     "message": "XX-Petit"
@@ -213,5 +216,68 @@
   },
   "optionNewDialsFirst": {
     "message": "Nouveaux au début"
+  },
+  "defaultOpen": {
+    "message": "Default Open"
+  },
+  "optionOpenCurrent": {
+    "message": "Current tab"
+  },
+  "optionOpenNewTab": {
+    "message": "New tab"
+  },
+  "themeMode": {
+    "message": "Theme"
+  },
+  "optionThemeSystem": {
+    "message": "Match system"
+  },
+  "optionThemeDark": {
+    "message": "Dark"
+  },
+  "optionThemeLight": {
+    "message": "Light"
+  },
+  "openAll": {
+    "message": "Open all"
+  },
+  "refreshAll": {
+    "message": "Refresh all thumbnails..."
+  },
+  "refreshAllTitle": {
+    "message": "Refresh all thumbnails?"
+  },
+  "refreshAllMessage": {
+    "message": "This will fetch new images for all items on this page. It may take a while.\n\nThis process runs in the background. Screenshots are not taken in this mode."
+  },
+  "continue": {
+    "message": "Continue"
+  },
+  "importExportTitle": {
+    "message": "Import / Export Settings"
+  },
+  "capturingImages": {
+    "message": "Capturing images..."
+  },
+  "resetSettingsConfirm": {
+    "message": "Are you sure you want to reset all settings to their defaults? This will not modify your site thumbnails."
+  },
+  "importErrorParse": {
+    "message": "Error! Unable to parse file."
+  },
+  "importErrorCreateFoldersSD2": {
+    "message": "SD2 import error! Unable to create folders."
+  },
+  "importErrorCreateFoldersFVD": {
+    "message": "FVD import error! Unable to create folders."
+  },
+  "importErrorCreateFolders": {
+    "message": "Error! Unable to create folders."
+  },
+  "importErrorBookmarksDials": {
+    "message": "Error! Unable to import bookmarks and items."
+  },
+  "genericErrorTryAgain": {
+    "message": "Something went wrong. Please try again."
   }
 }

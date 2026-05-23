@@ -9,7 +9,7 @@
     "message": "Botão Adicionar site"
   },
   "addTo": {
-    "message": "Adicionar à discagem rápida"
+    "message": "Adicionar ao OhMySwipeDeck"
   },
   "backgroundColor": {
     "message": "Cor de fundo"
@@ -42,10 +42,10 @@
     "message": "Excluir"
   },
   "dialRatio": {
-    "message": "Dial Format"
+    "message": "Tile Format"
   },
   "dialSize": {
-    "message": "Dial Size"
+    "message": "Tile Size"
   },
   "edit": {
     "message": "Editar"
@@ -58,11 +58,11 @@
   },
   "extensionDescription": {
     "description": "description of the app, displayed in store",
-    "message": "uma nova guia moderna para chrome, edge e firefox"
+    "message": "A gesture-first swipe deck for Chrome, Edge, and Firefox"
   },
   "extensionName": {
     "description": "title of the app, displayed in store",
-    "message": "mais uma discagem rápida"
+    "message": "OhMySwipeDeck"
   },
   "help": {
     "message": "Ajuda"
@@ -80,7 +80,7 @@
     "message": "Configurações de importação..."
   },
   "importExport": {
-    "message": "Isso fará backup ou restaurará as configurações e miniaturas.\n\nObserve que todas as discagens rápidas são gerenciadas pelo navegador como favoritos. Certifique-se de que eles sejam copiados separadamente por meio do gerenciador de favoritos ou sincronização.\n\nAVISO: a importação substituirá suas configurações atuais."
+    "message": "Isso fará backup ou restaurará as configurações e miniaturas do OhMySwipeDeck.\n\nObserve que todos os itens do OhMySwipeDeck são gerenciadas pelo navegador como favoritos. Certifique-se de que eles sejam copiados separadamente por meio do gerenciador de favoritos ou sincronização.\n\nAVISO: a importação substituirá suas configurações atuais."
   },
   "importExportLink": {
     "message": "Importar e Exportar..."
@@ -101,22 +101,22 @@
     "message": "Abrir na guia em segundo plano"
   },
   "newDial": {
-    "message": "Nova discagem rápida..."
+    "message": "Novo site..."
   },
   "newFolder": {
     "message": "Nova Pasta..."
   },
   "newInstall1": {
-    "message": "Comece com mais uma discagem rápida!"
+    "message": "Comece com OhMySwipeDeck!"
   },
   "newInstall2": {
-    "message": "⭐ Adicione sites clicando no botão abaixo ou adicione favoritos à pasta Discagem Rápida"
+    "message": "⭐ Adicione favoritos à pasta OhMySwipeDeck e eles aparecerão aqui"
   },
   "newInstall3": {
     "message": "✨ Os mostradores podem ser modificados clicando com o botão direito do mouse neles"
   },
   "newInstall4": {
-    "message": "\uD83D\uDC8E Acesse mais configurações clicando na engrenagem no canto superior direito"
+    "message": "💎 Acesse mais configurações clicando na engrenagem no canto superior direito"
   },
   "newPrivate": {
     "message": "Abrir em nova janela privada"
@@ -170,7 +170,7 @@
     "message": "Nome"
   },
   "title": {
-    "message": "Discagem rápida"
+    "message": "OhMySwipeDeck"
   },
   "uploadImage": {
     "message": "Adicionar imagem ..."
@@ -183,6 +183,9 @@
   },
   "optionWide": {
     "message": "Largo"
+  },
+  "optionFlow": {
+    "message": "Flow"
   },
   "optionXXSmall": {
     "message": "XX-Pequeno"
@@ -213,5 +216,68 @@
   },
   "optionNewDialsFirst": {
     "message": "Novos no início"
+  },
+  "defaultOpen": {
+    "message": "Default Open"
+  },
+  "optionOpenCurrent": {
+    "message": "Current tab"
+  },
+  "optionOpenNewTab": {
+    "message": "New tab"
+  },
+  "themeMode": {
+    "message": "Theme"
+  },
+  "optionThemeSystem": {
+    "message": "Match system"
+  },
+  "optionThemeDark": {
+    "message": "Dark"
+  },
+  "optionThemeLight": {
+    "message": "Light"
+  },
+  "openAll": {
+    "message": "Open all"
+  },
+  "refreshAll": {
+    "message": "Refresh all thumbnails..."
+  },
+  "refreshAllTitle": {
+    "message": "Refresh all thumbnails?"
+  },
+  "refreshAllMessage": {
+    "message": "This will fetch new images for all items on this page. It may take a while.\n\nThis process runs in the background. Screenshots are not taken in this mode."
+  },
+  "continue": {
+    "message": "Continue"
+  },
+  "importExportTitle": {
+    "message": "Import / Export Settings"
+  },
+  "capturingImages": {
+    "message": "Capturing images..."
+  },
+  "resetSettingsConfirm": {
+    "message": "Are you sure you want to reset all settings to their defaults? This will not modify your site thumbnails."
+  },
+  "importErrorParse": {
+    "message": "Error! Unable to parse file."
+  },
+  "importErrorCreateFoldersSD2": {
+    "message": "SD2 import error! Unable to create folders."
+  },
+  "importErrorCreateFoldersFVD": {
+    "message": "FVD import error! Unable to create folders."
+  },
+  "importErrorCreateFolders": {
+    "message": "Error! Unable to create folders."
+  },
+  "importErrorBookmarksDials": {
+    "message": "Error! Unable to import bookmarks and items."
+  },
+  "genericErrorTryAgain": {
+    "message": "Something went wrong. Please try again."
   }
 }
