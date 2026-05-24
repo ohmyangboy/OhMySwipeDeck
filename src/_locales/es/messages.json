@@ -314,6 +314,135 @@
     "message": "No folders in this scene"
   },
   "sceneEmptyMessage": {
-    "message": "Add a folder to this scene from Settings, or switch to All to see every folder."
+    "message": "Adjust the current scene rules, or switch to All to see everything."
+  },
+  "resetWallpaper": {
+    "message": "Reset Wallpaper"
+  },
+  "smartHomeSettings": {
+    "message": "Smart Home"
+  },
+  "homeBookmarks": {
+    "message": "Home Bookmarks"
+  },
+  "smartHomeSearch": {
+    "message": "Web Search"
+  },
+  "smartHomeRecent": {
+    "message": "Recently Opened Tabs"
+  },
+  "recentRules": {
+    "message": "Recent Tab Rules"
+  },
+  "includePatterns": {
+    "message": "Include patterns"
+  },
+  "excludePatterns": {
+    "message": "Exclude patterns"
+  },
+  "enableRecentPages": {
+    "message": "Enable Recent Tabs"
+  },
+  "recentUnavailable": {
+    "message": "Open tabs are not available in this browser."
+  },
+  "recentEmpty": {
+    "message": "No matching open tabs."
+  },
+  "searchUnavailable": {
+    "message": "Default browser search is unavailable."
+  },
+  "sceneFocus": {
+    "message": "Focus"
+  },
+  "sceneDaily": {
+    "message": "Daily"
+  },
+  "sceneRules": {
+    "message": "Scene Rules"
+  },
+  "defaultVisibility": {
+    "message": "Default visibility"
+  },
+  "optionShowByDefault": {
+    "message": "Show by default"
+  },
+  "optionHideByDefault": {
+    "message": "Hide by default"
+  },
+  "addScene": {
+    "message": "Add scene"
+  },
+  "duplicateScene": {
+    "message": "Duplicate"
+  },
+  "deleteScene": {
+    "message": "Delete scene"
+  },
+  "addRule": {
+    "message": "Add rule"
+  },
+  "removeRule": {
+    "message": "Remove rule"
+  },
+  "ruleActionShow": {
+    "message": "Show"
+  },
+  "ruleActionHide": {
+    "message": "Hide"
+  },
+  "ruleFieldFolderTitle": {
+    "message": "Folder title"
+  },
+  "ruleFieldFolderPath": {
+    "message": "Folder path"
+  },
+  "ruleFieldBookmarkTitle": {
+    "message": "Bookmark title"
+  },
+  "ruleFieldBookmarkUrl": {
+    "message": "Bookmark URL"
+  },
+  "ruleFieldBookmarkDomain": {
+    "message": "Bookmark domain"
+  },
+  "ruleFieldTabTitle": {
+    "message": "Tab title"
+  },
+  "ruleFieldTabUrl": {
+    "message": "Tab URL"
+  },
+  "ruleFieldTabDomain": {
+    "message": "Tab domain"
+  },
+  "ruleValue": {
+    "message": "Keyword"
+  },
+  "rulePreview": {
+    "message": "Preview"
+  },
+  "ruleVisible": {
+    "message": "Shown"
+  },
+  "ruleHidden": {
+    "message": "Hidden"
+  },
+  "ruleDefault": {
+    "message": "Default"
+  },
+  "selectSceneForRule": {
+    "message": "Select a scene first."
+  },
+  "ruleAdded": {
+    "message": "Rule added."
+  },
+  "hideSimilarFolder": {
+    "message": "Hide similar folders"
+  },
+  "showOnlySimilarFolder": {
+    "message": "Show only similar folders"
+  },
+  "hideSimilarUrl": {
+    "message": "Hide similar URLs"
   }
 }

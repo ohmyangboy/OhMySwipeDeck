@@ -65,6 +65,7 @@
         <li class="menu-separator"></li>
         <li class="menu-option" id="edit"><svg xmlns="http://www.w3.org/2000/svg" height="18px" viewBox="0 -960 960 960" width="18px" fill="currentColor"><path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/></svg><span class="menu-label" data-locale="edit">Edit</span></li>
         <li class="menu-option" id="refresh"><svg xmlns="http://www.w3.org/2000/svg" height="18px" viewBox="0 -960 960 960" width="18px" fill="currentColor"><path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"/></svg><span class="menu-label" data-locale="refresh">Refresh Thumbnails</span></li>
+        <li class="menu-option" id="hideSimilarUrl"><span class="menu-icon-spacer"></span><span class="menu-label" data-locale="hideSimilarUrl">Hide similar URLs</span></li>
         <li class="menu-separator"></li>
         <li class="menu-option" id="delete"><svg xmlns="http://www.w3.org/2000/svg" height="18px" viewBox="0 -960 960 960" width="18px" fill="currentColor"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg><span class="menu-label" data-locale="delete">Delete</span></li>
     </ul>
@@ -73,6 +74,9 @@
 <div class="menu" id="folderMenu">
     <ul class="menu-options">
         <li class="menu-option" id="editFolder"><svg xmlns="http://www.w3.org/2000/svg" height="18px" viewBox="0 -960 960 960" width="18px" fill="currentColor"><path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/></svg><span class="menu-label" data-locale="editFolder">Edit Folder...</span></li>
+        <li class="menu-option" id="hideSimilarFolder"><span class="menu-icon-spacer"></span><span class="menu-label" data-locale="hideSimilarFolder">Hide similar folders</span></li>
+        <li class="menu-option" id="showOnlySimilarFolder"><span class="menu-icon-spacer"></span><span class="menu-label" data-locale="showOnlySimilarFolder">Show only similar folders</span></li>
+        <li class="menu-separator"></li>
         <li class="menu-option" id="deleteFolder"><svg xmlns="http://www.w3.org/2000/svg" height="18px" viewBox="0 -960 960 960" width="18px" fill="currentColor"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg><span class="menu-label" data-locale="remove">Remove</span></li>
     </ul>
 </div>
@@ -306,7 +310,7 @@
                 <div id="previewOverlay"></div>
                 <input accept="image/*" class="settingsCtl" id="file" type="file">
                 <!--<label for="file" class="settingsCtl" data-locale="browse">Browse...</label>-->
-                <!--<a id="resetWallpaper" href="#">Reset</a>-->
+                <button aria-label="Reset Wallpaper" class="settingsCtl wallpaperResetButton" hidden id="resetWallpaperBtn" title="Reset Wallpaper" type="button">&times;</button>
             </div>
         </div>
         <div id='switchesContainer'>
@@ -416,9 +420,14 @@
                 </div>
                 <div class='column controls'>
                     <select class="settingsCtl" id="newTabSoundType" name="newTabSoundType">
-                        <option value="ollie" data-locale="optionSoundOllie">Ollie (skateboard pop)</option>
-                        <option value="skate" data-locale="optionSoundSkate">Skate (rolling board)</option>
-                        <option selected value="soda" data-locale="optionSoundSoda">Soda (can opening)</option>
+                        <option selected value="open-zen">Open Zen</option>
+                        <option value="open-rise">Open Rise</option>
+                        <option value="soft-bloom">Soft Bloom</option>
+                        <option value="soft-pearl-drop">Soft Pearl Drop</option>
+                        <option value="soft-quiet-resolve">Soft Quiet Resolve</option>
+                        <option value="open-drop">Open Drop</option>
+                        <option value="open-whisper">Open Whisper</option>
+                        <option value="soft-luna-bell">Soft Luna Bell</option>
                     </select>
                 </div>
             </div>
@@ -429,19 +438,10 @@
                 <div class='column controls'>
                     <select class="settingsCtl" id="activeScene" name="activeScene">
                         <option selected value="all" data-locale="sceneAll">All</option>
-                        <option value="work" data-locale="sceneWork">Work</option>
-                        <option value="life" data-locale="sceneLife">Life</option>
                     </select>
                 </div>
             </div>
-            <div class="sceneFolderPanel">
-                <div class="sceneFolderHeader">
-                    <span data-locale="sceneFolders">Scene Folders</span>
-                    <span data-locale="sceneWork">Work</span>
-                    <span data-locale="sceneLife">Life</span>
-                </div>
-                <div id="sceneFolderAssignments" class="sceneFolderAssignments"></div>
-            </div>
+            <div class="sceneRulePanel" id="sceneRuleSettings"></div>
             <div class='row' style="display:none">
                 <div class='column'>
                     <label data-locale="largeTiles">Large Tiles</label>

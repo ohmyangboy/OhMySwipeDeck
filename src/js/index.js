@@ -85,6 +85,7 @@ const textColor_picker_wrapper = document.getElementById("textColor-picker-wrapp
 const imgInput = document.getElementById("file");
 const imgPreview = document.getElementById("preview");
 const previewOverlay = document.getElementById("previewOverlay");
+const resetWallpaperBtn = document.getElementById("resetWallpaperBtn");
 const switchesContainer = document.getElementById("switchesContainer");
 const wallPaperEnabled = document.getElementById("wallpaper");
 const previewContainer = document.getElementById("previewContainer");
@@ -104,7 +105,7 @@ const defaultOpenInput = document.getElementById("defaultOpen");
 const newTabSoundInput = document.getElementById("newTabSound");
 const newTabSoundTypeInput = document.getElementById("newTabSoundType");
 const activeSceneInput = document.getElementById("activeScene");
-const sceneFolderAssignments = document.getElementById("sceneFolderAssignments");
+const sceneRuleSettings = document.getElementById("sceneRuleSettings");
 const importExportBtn = document.getElementById("importExportBtn");
 const importExportStatus = document.getElementById('statusMessage');
 const exportBtn = document.getElementById("exportBtn");
@@ -126,6 +127,13 @@ const port = "p-" + new Date().getTime();
 let tabMessagePort = null;
 
 chrome.runtime.onMessage.addListener(handleMessages);
+chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'sync' && changes[sceneSyncStorageKey]?.newValue) {
+        sceneSync = normalizeSceneSync(changes[sceneSyncStorageKey].newValue);
+        renderSceneControls();
+        processRefresh();
+    }
+});
 
 let cache = {};
 let resizing = false;
@@ -161,45 +169,95 @@ const helpUrl = 'https://github.com/yangbukun/OhMySwipeDeck';
 const swipeDeckFolderTitle = 'OhMySwipeDeck';
 // Keep the old root folder discoverable for users upgrading from the previous name.
 const legacySpeedDialFolderTitle = 'Speed Dial';
-const homeSceneKey = '__home__';
 const sceneAll = 'all';
-const sceneWork = 'work';
-const sceneLife = 'life';
-const assignableScenes = [sceneWork, sceneLife];
-const validScenes = [sceneAll, ...assignableScenes];
-const soundOllie = 'ollie';
-const soundSkate = 'skate';
-const soundSoda = 'soda';
-const validNewTabSoundTypes = [soundOllie, soundSkate, soundSoda];
+const sceneFocus = 'focus';
+const sceneDaily = 'daily';
+const sceneSyncStorageKey = 'sceneSync.v2';
+const legacySceneSyncStorageKey = 'sceneSync.v1';
+const sceneLocalStorageKey = 'sceneLocal.v1';
+const recentOpenedTabsStorageKey = 'recentOpenedTabs.v1';
+const smartHomeRecentLimit = 8;
+const defaultFocusHidePatterns = ['游戏', '视频', '吉他', '娱乐'];
+const sceneRuleActions = ['show', 'hide'];
+const sceneRuleFields = [
+    'folder.title',
+    'folder.path',
+    'bookmark.title',
+    'bookmark.url',
+    'bookmark.domain',
+    'tab.title',
+    'tab.url',
+    'tab.domain',
+];
+const defaultSceneModules = {
+    searchEnabled: true,
+    recentTabsEnabled: true,
+    homeBookmarksEnabled: true,
+};
+const soundOpenZen = 'open-zen';
+const soundOpenRise = 'open-rise';
+const soundSoftBloom = 'soft-bloom';
+const soundSoftPearlDrop = 'soft-pearl-drop';
+const soundSoftQuietResolve = 'soft-quiet-resolve';
+const soundOpenDrop = 'open-drop';
+const soundOpenWhisper = 'open-whisper';
+const soundSoftLunaBell = 'soft-luna-bell';
+const validNewTabSoundTypes = [
+    soundOpenZen,
+    soundOpenRise,
+    soundSoftBloom,
+    soundSoftPearlDrop,
+    soundSoftQuietResolve,
+    soundOpenDrop,
+    soundOpenWhisper,
+    soundSoftLunaBell,
+];
 const emptySceneContainerId = 'sceneEmpty';
 let isToastVisible = false;
 const folderRailSettleDelay = 115;
+const folderSwitchEnterClass = 'folderSwitchEntering';
+const folderSwitchExitClass = 'folderSwitchLeaving';
+const folderSwitchEnterDuration = 260;
+const folderSwitchExitDuration = 140;
+const folderSwitchEnterStaggerMs = 12;
+const folderSwitchExitStaggerMs = 6;
+const folderSwitchEnterStaggerCap = 10;
+const folderSwitchExitStaggerCap = 8;
 const defaultWallpaperPreviewSrc = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%222400%22 height=%221000%22 viewBox=%220 0 2400 1000%22/%3E';
 const systemThemeQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+const reduceMotionQuery = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
 const themePalettes = {
     dark: {
-        backgroundColor: '#0d0f0f',
-        textColor: '#f4f1e8',
+        backgroundColor: '#090a0d',
+        textColor: '#f3f5f7',
     },
     light: {
-        backgroundColor: '#f4efe6',
-        textColor: '#17201b',
+        backgroundColor: '#f4f6f8',
+        textColor: '#171b21',
     },
 };
 const themeDefaultColors = {
-    backgroundColor: new Set(Object.values(themePalettes).map(palette => palette.backgroundColor.toLowerCase())),
-    textColor: new Set(Object.values(themePalettes).map(palette => palette.textColor.toLowerCase())),
+    backgroundColor: new Set([...Object.values(themePalettes).map(palette => palette.backgroundColor.toLowerCase()), '#0d0f0f', '#f4efe6']),
+    textColor: new Set([...Object.values(themePalettes).map(palette => palette.textColor.toLowerCase()), '#f4f1e8', '#17201b']),
 };
 const initialPaintSnapshotKey = 'ohMySwipeDeck.initialPaint';
 
 let folderIds = [];
 let sceneFolderOptions = [];
+let sceneHomeOptions = [];
+let sceneSync = null;
+let sceneLocal = null;
+let folderSwitchEnterTimer = null;
+let folderSwitchExitTimer = null;
+let folderSwitchEnterToken = 0;
+let folderSwitchEnterTiles = [];
+let folderSwitchExitTiles = [];
 
 let defaults = {
     wallpaper: true,
     wallpaperSrc: 'img/bg.jpg',
     themeMode: 'system',
-    backgroundColor: '#0d0f0f',
+    backgroundColor: '#090a0d',
     largeTiles: true,
     rememberFolder: false,
     showTitles: true,
@@ -212,8 +270,8 @@ let defaults = {
     defaultSort: 'first',
     defaultOpen: 'newTab',
     newTabSound: true,
-    newTabSoundType: soundSoda,
-    textColor: '#f4f1e8',
+    newTabSoundType: soundOpenZen,
+    textColor: '#f3f5f7',
     dialSize: 'large',
     dialRatio: 'flow',
     currentFolder: null,
@@ -257,8 +315,104 @@ function updateSearchIconPosition() {
     // This function is kept for compatibility in case it's called elsewhere
 }
 
+const i18nFallbackMessages = {
+    en: {
+        smartHomeSettings: 'Smart Home',
+        homeBookmarks: 'Home Bookmarks',
+        smartHomeSearch: 'Web Search',
+        smartHomeRecent: 'Recently Opened Tabs',
+        recentRules: 'Recent Tab Rules',
+        includePatterns: 'Include patterns',
+        excludePatterns: 'Exclude patterns',
+        enableRecentPages: 'Enable Recent Tabs',
+        recentUnavailable: 'Open tabs are not available in this browser.',
+        recentEmpty: 'No matching open tabs.',
+        searchUnavailable: 'Default browser search is unavailable.',
+        sceneFocus: 'Focus',
+        sceneDaily: 'Daily',
+        sceneRules: 'Scene Rules',
+        defaultVisibility: 'Default visibility',
+        optionShowByDefault: 'Show by default',
+        optionHideByDefault: 'Hide by default',
+        addScene: 'Add scene',
+        duplicateScene: 'Duplicate',
+        deleteScene: 'Delete',
+        addRule: 'Add rule',
+        removeRule: 'Remove',
+        ruleActionShow: 'show',
+        ruleActionHide: 'hide',
+        ruleFieldFolderTitle: 'folder title',
+        ruleFieldFolderPath: 'folder path',
+        ruleFieldBookmarkTitle: 'bookmark title',
+        ruleFieldBookmarkUrl: 'bookmark URL',
+        ruleFieldBookmarkDomain: 'bookmark domain',
+        ruleFieldTabTitle: 'tab title',
+        ruleFieldTabUrl: 'tab URL',
+        ruleFieldTabDomain: 'tab domain',
+        ruleValue: 'keyword',
+        rulePreview: 'Preview',
+        ruleVisible: 'shown',
+        ruleHidden: 'hidden',
+        ruleDefault: 'default',
+        selectSceneForRule: 'Select a scene first.',
+        ruleAdded: 'Rule added.',
+        hideSimilarFolder: 'Hide similar folders',
+        showOnlySimilarFolder: 'Show only similar folders',
+        hideSimilarUrl: 'Hide similar URLs',
+    },
+    zh: {
+        smartHomeSettings: '智能主页',
+        homeBookmarks: '主页书签',
+        smartHomeSearch: '网络搜索',
+        smartHomeRecent: '最近打开的标签',
+        recentRules: '最近标签规则',
+        includePatterns: '包含规则',
+        excludePatterns: '排除规则',
+        enableRecentPages: '启用最近标签',
+        recentUnavailable: '此浏览器无法读取当前标签。',
+        recentEmpty: '没有匹配的打开标签。',
+        searchUnavailable: '无法使用浏览器默认搜索。',
+        sceneFocus: '专注',
+        sceneDaily: '日常',
+        sceneRules: '场景规则',
+        defaultVisibility: '默认显示方式',
+        optionShowByDefault: '默认显示',
+        optionHideByDefault: '默认隐藏',
+        addScene: '新增场景',
+        duplicateScene: '复制',
+        deleteScene: '删除',
+        addRule: '新增规则',
+        removeRule: '删除',
+        ruleActionShow: '显示',
+        ruleActionHide: '隐藏',
+        ruleFieldFolderTitle: '文件夹名称',
+        ruleFieldFolderPath: '文件夹路径',
+        ruleFieldBookmarkTitle: '书签标题',
+        ruleFieldBookmarkUrl: '书签地址',
+        ruleFieldBookmarkDomain: '书签域名',
+        ruleFieldTabTitle: '标签标题',
+        ruleFieldTabUrl: '标签地址',
+        ruleFieldTabDomain: '标签域名',
+        ruleValue: '关键词',
+        rulePreview: '预览',
+        ruleVisible: '显示',
+        ruleHidden: '隐藏',
+        ruleDefault: '默认',
+        selectSceneForRule: '请先选择一个具体场景。',
+        ruleAdded: '规则已添加。',
+        hideSimilarFolder: '在当前场景隐藏类似文件夹',
+        showOnlySimilarFolder: '只在当前场景显示类似文件夹',
+        hideSimilarUrl: '隐藏类似网址',
+    },
+};
+
 function i18n(key) {
-    return chrome.i18n.getMessage(key) || key;
+    const message = chrome.i18n.getMessage(key);
+    if (message) {
+        return message;
+    }
+    const language = (navigator.language || '').toLowerCase().startsWith('zh') ? 'zh' : 'en';
+    return i18nFallbackMessages[language][key] || i18nFallbackMessages.en[key] || key;
 }
 
 // detect clock settings
@@ -301,6 +455,7 @@ function applyThemeMode() {
     document.body.classList.toggle('themeLight', resolvedTheme === 'light');
     document.body.classList.toggle('themeDark', resolvedTheme === 'dark');
     document.documentElement.dataset.theme = resolvedTheme;
+    document.documentElement.style.colorScheme = resolvedTheme;
     Coloris({ themeMode: resolvedTheme });
     return themePalettes[resolvedTheme] || themePalettes.dark;
 }
@@ -322,6 +477,8 @@ function clearInitialPaintClasses() {
     document.documentElement.classList.remove('gradientBackground', 'initialCustomWallpaper', 'initialSolidBackground');
     document.documentElement.style.removeProperty('--initial-wallpaper-src');
     document.documentElement.style.removeProperty('--initial-background-color');
+    document.documentElement.style.removeProperty('--surface-0');
+    document.documentElement.style.removeProperty('background-color');
 }
 
 function syncInitialPaintSnapshot(backgroundColor, textColor) {
@@ -366,6 +523,9 @@ function setWallpaperPreview(wallpaperSrc) {
     const usesDefaultWallpaper = isDefaultWallpaperSrc(wallpaperSrc);
     imgPreview.classList.toggle('defaultWallpaperPreview', usesDefaultWallpaper);
     imgPreview.dataset.defaultWallpaper = usesDefaultWallpaper ? 'true' : 'false';
+    resetWallpaperBtn.hidden = usesDefaultWallpaper;
+    resetWallpaperBtn.title = i18n('resetWallpaper');
+    resetWallpaperBtn.setAttribute('aria-label', i18n('resetWallpaper'));
     imgPreview.onload = syncWallpaperPreviewLayout;
     imgPreview.onerror = function () {
         if (usesDefaultWallpaper) {
@@ -381,6 +541,15 @@ function setWallpaperPreview(wallpaperSrc) {
     }
 }
 
+function resetWallpaperToDefault() {
+    settings.wallpaper = true;
+    settings.wallpaperSrc = defaults.wallpaperSrc;
+    wallPaperEnabled.checked = true;
+    setWallpaperPreview(defaults.wallpaperSrc);
+    applySettings();
+    chrome.storage.local.set({ settings });
+}
+
 function cloneDefaultSettings() {
     return JSON.parse(JSON.stringify(defaults));
 }
@@ -392,13 +561,209 @@ function uniqueStringList(value) {
     return [...new Set(value.filter(item => typeof item === 'string' && item.length))];
 }
 
+function uniqueTrimmedStringList(value) {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+    return [...new Set(value
+        .map(item => typeof item === 'string' ? item.trim() : '')
+        .filter(Boolean))];
+}
+
+function createSceneId(name = 'scene') {
+    const slug = String(name || 'scene')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        || 'scene';
+    const existingIds = new Set(getSceneList().map(scene => scene.id));
+    let candidate = slug;
+    let suffix = 2;
+    while (existingIds.has(candidate) || candidate === sceneAll) {
+        candidate = `${slug}-${suffix++}`;
+    }
+    return candidate;
+}
+
+function createSceneRule(action = 'hide', field = 'folder.title', value = '') {
+    return {
+        id: `rule-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        action: sceneRuleActions.includes(action) ? action : 'hide',
+        field: sceneRuleFields.includes(field) ? field : 'folder.title',
+        match: 'contains',
+        value: String(value || '').trim(),
+    };
+}
+
+function createDefaultFocusRules() {
+    const fields = ['folder.title', 'bookmark.title', 'bookmark.url', 'tab.title', 'tab.url'];
+    const rules = [];
+    for (const value of defaultFocusHidePatterns) {
+        for (const field of fields) {
+            rules.push(createSceneRule('hide', field, value));
+        }
+    }
+    return rules;
+}
+
+function cloneDefaultSceneSync() {
+    return {
+        version: 2,
+        scenes: [
+            {
+                id: sceneFocus,
+                name: i18n('sceneFocus'),
+                defaultVisibility: 'show',
+                modules: { ...defaultSceneModules },
+                rules: createDefaultFocusRules(),
+            },
+            {
+                id: sceneDaily,
+                name: i18n('sceneDaily'),
+                defaultVisibility: 'show',
+                modules: { ...defaultSceneModules },
+                rules: [],
+            },
+        ],
+    };
+}
+
+function normalizeSceneRuleEntry(rule = {}) {
+    const value = String(rule.value ?? rule.pattern ?? rule.values?.[0] ?? '').trim();
+    return {
+        id: typeof rule.id === 'string' && rule.id ? rule.id : createSceneRule().id,
+        action: sceneRuleActions.includes(rule.action) ? rule.action : 'hide',
+        field: sceneRuleFields.includes(rule.field) ? rule.field : 'folder.title',
+        match: 'contains',
+        value,
+    };
+}
+
+function normalizeSceneModules(modules = {}) {
+    return {
+        searchEnabled: modules.searchEnabled === undefined ? true : modules.searchEnabled === true,
+        recentTabsEnabled: modules.recentTabsEnabled === undefined
+            ? (modules.recentEnabled === undefined ? true : modules.recentEnabled === true)
+            : modules.recentTabsEnabled === true,
+        homeBookmarksEnabled: modules.homeBookmarksEnabled === undefined ? true : modules.homeBookmarksEnabled === true,
+    };
+}
+
+function normalizeSceneConfig(scene = {}, fallbackId = sceneDaily) {
+    const id = typeof scene.id === 'string' && scene.id && scene.id !== sceneAll
+        ? scene.id
+        : fallbackId;
+    const rules = Array.isArray(scene.rules)
+        ? scene.rules.map(normalizeSceneRuleEntry).filter(Boolean)
+        : [];
+    return {
+        id,
+        name: typeof scene.name === 'string' && scene.name.trim() ? scene.name.trim() : id,
+        defaultVisibility: scene.defaultVisibility === 'hide' ? 'hide' : 'show',
+        modules: normalizeSceneModules(scene.modules || scene),
+        rules,
+    };
+}
+
+function getLegacySceneName(sceneId) {
+    if (sceneId === 'work') return i18n('sceneWork') || 'Work';
+    if (sceneId === 'life') return i18n('sceneLife') || 'Life';
+    return sceneId;
+}
+
+function parseLegacyKeyValue(key, prefix) {
+    return String(key || '').startsWith(prefix) ? String(key).slice(prefix.length) : String(key || '');
+}
+
+function convertV1SceneSyncToV2(v1SceneSync = {}) {
+    const scenes = [];
+    const sourceScenes = v1SceneSync?.scenes || {};
+    for (const sceneId of Object.keys(sourceScenes)) {
+        const source = sourceScenes[sceneId] || {};
+        const rules = [];
+        for (const folderKey of uniqueStringList(source.folderKeys)) {
+            rules.push(createSceneRule('show', 'folder.title', parseLegacyKeyValue(folderKey, 'folder:')));
+        }
+        for (const homeUrlKey of uniqueStringList(source.homeUrlKeys)) {
+            rules.push(createSceneRule('show', 'bookmark.url', parseLegacyKeyValue(homeUrlKey, 'url:')));
+        }
+        const recentRules = source.recentRules || {};
+        for (const pattern of uniqueTrimmedStringList(recentRules.includePatterns)) {
+            rules.push(createSceneRule('show', 'tab.url', pattern));
+            rules.push(createSceneRule('show', 'tab.title', pattern));
+        }
+        for (const pattern of uniqueTrimmedStringList(recentRules.excludePatterns)) {
+            rules.push(createSceneRule('hide', 'tab.url', pattern));
+            rules.push(createSceneRule('hide', 'tab.title', pattern));
+        }
+        scenes.push(normalizeSceneConfig({
+            id: sceneId,
+            name: getLegacySceneName(sceneId),
+            defaultVisibility: 'hide',
+            modules: {
+                searchEnabled: source.searchEnabled,
+                recentTabsEnabled: recentRules.enabled,
+                homeBookmarksEnabled: true,
+            },
+            rules,
+        }, sceneId));
+    }
+    return { version: 2, scenes: scenes.length ? scenes : cloneDefaultSceneSync().scenes };
+}
+
+function normalizeSceneSync(nextSceneSync = {}) {
+    const source = nextSceneSync && typeof nextSceneSync === 'object' ? nextSceneSync : {};
+    if (source.version !== 2 || !Array.isArray(source.scenes)) {
+        return normalizeSceneSync(convertV1SceneSyncToV2(source));
+    }
+
+    const seen = new Set();
+    const scenes = [];
+    source.scenes.forEach((scene, index) => {
+        const normalized = normalizeSceneConfig(scene, `scene-${index + 1}`);
+        if (seen.has(normalized.id) || normalized.id === sceneAll) {
+            normalized.id = createSceneId(normalized.name);
+        }
+        seen.add(normalized.id);
+        scenes.push(normalized);
+    });
+
+    if (!scenes.length) {
+        return cloneDefaultSceneSync();
+    }
+
+    return { version: 2, scenes };
+}
+
+function getSceneList() {
+    return Array.isArray(sceneSync?.scenes) ? sceneSync.scenes : [];
+}
+
+function getSceneById(sceneId) {
+    return getSceneList().find(scene => scene.id === sceneId) || null;
+}
+
+function isKnownScene(sceneId) {
+    return sceneId === sceneAll || !!getSceneById(sceneId);
+}
+
+function normalizeSceneLocal(nextSceneLocal = {}) {
+    const activeSceneId = nextSceneLocal?.activeSceneId || nextSceneLocal?.activeScene || sceneAll;
+    return {
+        activeSceneId: typeof activeSceneId === 'string' && activeSceneId ? activeSceneId : sceneAll,
+    };
+}
+
 function normalizeSettings(nextSettings = {}) {
     const normalized = Object.assign(cloneDefaultSettings(), nextSettings || {});
     normalized.newTabSound = normalized.newTabSound !== false;
     normalized.newTabSoundType = validNewTabSoundTypes.includes(normalized.newTabSoundType)
         ? normalized.newTabSoundType
-        : soundSoda;
-    normalized.activeScene = validScenes.includes(normalized.activeScene) ? normalized.activeScene : sceneAll;
+        : soundOpenZen;
+    normalized.activeScene = typeof normalized.activeScene === 'string' && normalized.activeScene
+        ? normalized.activeScene
+        : sceneAll;
     normalized.sceneFolders = {
         work: uniqueStringList(normalized.sceneFolders?.work),
         life: uniqueStringList(normalized.sceneFolders?.life),
@@ -408,11 +773,84 @@ function normalizeSettings(nextSettings = {}) {
 
 function normalizeSceneSettings() {
     settings = normalizeSettings(settings);
+    sceneSync = normalizeSceneSync(sceneSync);
+    sceneLocal = normalizeSceneLocal(sceneLocal || { activeScene: settings.activeScene });
+    if (!isKnownScene(sceneLocal.activeSceneId)) {
+        sceneLocal.activeSceneId = sceneAll;
+    }
+    settings.activeScene = sceneLocal.activeSceneId;
     return settings;
 }
 
-function getSceneFolderKey(folderId) {
-    return folderId === swipeDeckId ? homeSceneKey : folderId;
+function getActiveScene() {
+    return sceneLocal?.activeSceneId || settings?.activeScene || sceneAll;
+}
+
+function getSceneRules(scene = getActiveScene()) {
+    sceneSync = normalizeSceneSync(sceneSync);
+    if (scene === sceneAll) {
+        return {
+            id: sceneAll,
+            name: i18n('sceneAll'),
+            defaultVisibility: 'show',
+            modules: { ...defaultSceneModules },
+            rules: [],
+        };
+    }
+    return getSceneById(scene) || getSceneRules(sceneAll);
+}
+
+function saveSceneSync() {
+    sceneSync = normalizeSceneSync(sceneSync);
+    return chrome.storage.sync
+        ? chrome.storage.sync.set({ [sceneSyncStorageKey]: sceneSync }).catch(error => {
+            console.warn('Unable to sync scene settings:', error);
+        })
+        : Promise.resolve();
+}
+
+function saveSceneLocal() {
+    sceneLocal = normalizeSceneLocal(sceneLocal);
+    settings.activeScene = sceneLocal.activeSceneId;
+    return chrome.storage.local.set({ [sceneLocalStorageKey]: sceneLocal });
+}
+
+function setActiveScene(scene, persist = false) {
+    sceneLocal = normalizeSceneLocal({ activeSceneId: isKnownScene(scene) ? scene : sceneAll });
+    if (settings) {
+        settings.activeScene = sceneLocal.activeSceneId;
+    }
+    if (persist) {
+        saveSceneLocal();
+    }
+    return sceneLocal.activeSceneId;
+}
+
+function normalizeFolderSceneTitle(title) {
+    return String(title || '').trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+function getHomeUrlKey(url) {
+    try {
+        const parsedUrl = new URL(url);
+        parsedUrl.hash = '';
+        parsedUrl.protocol = parsedUrl.protocol.toLowerCase();
+        parsedUrl.hostname = parsedUrl.hostname.toLowerCase();
+        if (parsedUrl.pathname.length > 1 && parsedUrl.pathname.endsWith('/')) {
+            parsedUrl.pathname = parsedUrl.pathname.slice(0, -1);
+        }
+        return `url:${parsedUrl.toString()}`;
+    } catch (error) {
+        return `url:${String(url || '').trim()}`;
+    }
+}
+
+function parsePatternInput(value) {
+    return uniqueTrimmedStringList(String(value || '').split(/[\n,]+/));
+}
+
+function formatPatternList(value) {
+    return uniqueTrimmedStringList(value).join('\n');
 }
 
 function getSortedDeckFolders(children) {
@@ -426,20 +864,134 @@ function getSortedDeckFolders(children) {
     return allFolders;
 }
 
-function isFolderVisibleInActiveScene(folderId) {
-    const activeScene = settings?.activeScene || sceneAll;
+function getDomainFromUrl(url) {
+    try {
+        return new URL(url).hostname.replace(/^www\./, '').toLowerCase();
+    } catch (error) {
+        return '';
+    }
+}
+
+function getFolderPath(folder) {
+    return `${swipeDeckFolderTitle}/${folder?.title || ''}`;
+}
+
+function getRuleFieldLabel(field) {
+    const labels = {
+        'folder.title': i18n('ruleFieldFolderTitle'),
+        'folder.path': i18n('ruleFieldFolderPath'),
+        'bookmark.title': i18n('ruleFieldBookmarkTitle'),
+        'bookmark.url': i18n('ruleFieldBookmarkUrl'),
+        'bookmark.domain': i18n('ruleFieldBookmarkDomain'),
+        'tab.title': i18n('ruleFieldTabTitle'),
+        'tab.url': i18n('ruleFieldTabUrl'),
+        'tab.domain': i18n('ruleFieldTabDomain'),
+    };
+    return labels[field] || field;
+}
+
+function getRuleActionLabel(action) {
+    return action === 'show' ? i18n('ruleActionShow') : i18n('ruleActionHide');
+}
+
+function getRuleFieldValue(context, field) {
+    switch (field) {
+        case 'folder.title':
+            return context.folder?.title || '';
+        case 'folder.path':
+            return context.folder?.path || getFolderPath(context.folder);
+        case 'bookmark.title':
+            return context.bookmark?.title || '';
+        case 'bookmark.url':
+            return context.bookmark?.url || '';
+        case 'bookmark.domain':
+            return context.bookmark?.domain || getDomainFromUrl(context.bookmark?.url);
+        case 'tab.title':
+            return context.tab?.title || '';
+        case 'tab.url':
+            return context.tab?.url || '';
+        case 'tab.domain':
+            return context.tab?.domain || getDomainFromUrl(context.tab?.url);
+        default:
+            return '';
+    }
+}
+
+function doesRuleMatch(rule, context) {
+    const value = String(rule.value || '').trim().toLowerCase();
+    if (!value) return false;
+    return String(getRuleFieldValue(context, rule.field) || '').toLowerCase().includes(value);
+}
+
+function evaluateSceneVisibility(context, sceneId = getActiveScene()) {
+    const scene = getSceneRules(sceneId);
+    let visible = scene.defaultVisibility !== 'hide';
+    let matchedRule = null;
+
+    if (scene.id === sceneAll) {
+        return { visible: true, matchedRule: null };
+    }
+
+    for (const rule of scene.rules) {
+        if (doesRuleMatch(rule, context)) {
+            visible = rule.action === 'show';
+            matchedRule = rule;
+        }
+    }
+
+    return { visible, matchedRule };
+}
+
+function getFolderRuleContext(folder) {
+    return {
+        type: 'folder',
+        folder: {
+            title: folder?.title || '',
+            path: getFolderPath(folder),
+        },
+    };
+}
+
+function getBookmarkRuleContext(bookmark) {
+    return {
+        type: 'bookmark',
+        bookmark: {
+            title: bookmark?.title || '',
+            url: bookmark?.url || '',
+            domain: getDomainFromUrl(bookmark?.url),
+        },
+    };
+}
+
+function getTabRuleContext(tab) {
+    return {
+        type: 'tab',
+        tab: {
+            title: tab?.title || '',
+            url: tab?.url || '',
+            domain: getDomainFromUrl(tab?.url),
+        },
+    };
+}
+
+function isFolderVisibleInActiveScene(folder) {
+    const activeScene = getActiveScene();
+    const folderId = typeof folder === 'object' ? folder.id : folder;
     if (activeScene === sceneAll) {
         return true;
     }
-    return settings.sceneFolders?.[activeScene]?.includes(getSceneFolderKey(folderId)) || false;
+    if (folderId === swipeDeckId) {
+        return true;
+    }
+    return evaluateSceneVisibility(getFolderRuleContext(folder), activeScene).visible;
 }
 
 function getVisibleFoldersForActiveScene(allFolders) {
-    return allFolders.filter(folder => isFolderVisibleInActiveScene(folder.id));
+    return allFolders.filter(folder => isFolderVisibleInActiveScene(folder));
 }
 
 function shouldRenderFolderTabs(visibleFolders) {
-    return visibleFolders.length > 1 || (settings?.activeScene !== sceneAll && visibleFolders.length > 0);
+    return visibleFolders.length > 1 || (getActiveScene() !== sceneAll && visibleFolders.length > 0);
 }
 
 function getFolderForActiveScene(folderId, visibleFolders) {
@@ -460,115 +1012,410 @@ function setCurrentFolderForScene(folderId, persist = false) {
 }
 
 function pruneSceneFolderAssignments(allFolders) {
-    if (!settings) return false;
-
-    const validFolderKeys = new Set(allFolders.map(folder => getSceneFolderKey(folder.id)));
-    let changed = false;
-
-    for (const scene of assignableScenes) {
-        const currentList = settings.sceneFolders?.[scene] || [];
-        const prunedList = currentList.filter(folderKey => validFolderKeys.has(folderKey));
-        if (prunedList.length !== currentList.length) {
-            changed = true;
-        }
-        settings.sceneFolders[scene] = prunedList;
-    }
-
-    if (changed) {
-        chrome.storage.local.set({ settings });
-    }
-
-    return changed;
+    return false;
 }
 
-function setFolderSceneMembership(folderKey, scene, enabled) {
-    if (!assignableScenes.includes(scene)) return;
+function assignFolderToActiveScene(folder) {
+    const scene = getSceneById(getActiveScene());
+    if (!scene || scene.defaultVisibility !== 'hide') {
+        return false;
+    }
+    addRuleToScene(scene.id, createSceneRule('show', 'folder.title', folder.title));
+    return true;
+}
+
+function removeFolderFromSceneAssignments(folderId, folderTitle = '') {
+    return false;
+}
+
+function setHomeUrlSceneMembership(homeUrlKey, scene, enabled) {
+    const sceneConfig = getSceneById(scene);
+    if (!sceneConfig || !enabled) return;
+    const url = parseLegacyKeyValue(homeUrlKey, 'url:');
+    if (url) {
+        addRuleToScene(scene, createSceneRule('show', 'bookmark.url', url));
+    }
+}
+
+function removeHomeUrlFromSceneAssignments(url) {
+    return false;
+}
+
+function replaceHomeUrlSceneAssignment(oldUrl, newUrl) {
+    return false;
+}
+
+function setSceneModuleValue(scene, key, value) {
+    const sceneConfig = getSceneById(scene);
+    if (!sceneConfig) return;
 
     normalizeSceneSettings();
-    const sceneList = new Set(settings.sceneFolders[scene]);
-    if (enabled) {
-        sceneList.add(folderKey);
-    } else {
-        sceneList.delete(folderKey);
+    const target = getSceneById(scene);
+    if (Object.prototype.hasOwnProperty.call(target.modules, key)) {
+        target.modules[key] = value === true;
     }
-    settings.sceneFolders[scene] = [...sceneList];
-    chrome.storage.local.set({ settings });
-
-    if (settings.activeScene === scene) {
+    saveSceneSync();
+    if (getActiveScene() === scene) {
         processRefresh();
     }
 }
 
-function assignFolderToActiveScene(folderId) {
-    if (!assignableScenes.includes(settings?.activeScene)) {
-        return false;
+function updateSceneConfig(sceneId, updater, refresh = true) {
+    const scene = getSceneById(sceneId);
+    if (!scene) return;
+    updater(scene);
+    sceneSync = normalizeSceneSync(sceneSync);
+    saveSceneSync();
+    renderSceneControls();
+    if (refresh) {
+        processRefresh();
     }
-    setFolderSceneMembership(getSceneFolderKey(folderId), settings.activeScene, true);
-    return true;
 }
 
-function removeFolderFromSceneAssignments(folderId) {
-    if (!settings) return;
-
-    const folderKey = getSceneFolderKey(folderId);
-    let changed = false;
-    for (const scene of assignableScenes) {
-        const nextList = (settings.sceneFolders?.[scene] || []).filter(key => key !== folderKey);
-        if (nextList.length !== settings.sceneFolders[scene].length) {
-            changed = true;
+function addRuleToScene(sceneId, rule, refresh = true) {
+    updateSceneConfig(sceneId, scene => {
+        const normalizedRule = normalizeSceneRuleEntry(rule);
+        if (normalizedRule) {
+            scene.rules.push(normalizedRule);
         }
-        settings.sceneFolders[scene] = nextList;
-    }
-
-    if (changed) {
-        chrome.storage.local.set({ settings });
-    }
+    }, refresh);
 }
 
-function renderSceneFolderControls() {
-    if (!sceneFolderAssignments || !settings || !swipeDeckId) return;
+function getShortcutRuleScene() {
+    const scene = getSceneById(getActiveScene());
+    if (!scene) {
+        showToast(i18n('selectSceneForRule'));
+        return null;
+    }
+    return scene;
+}
+
+function addShortcutRule(action, field, value, options = {}) {
+    const scene = getShortcutRuleScene();
+    if (!scene) return;
+    updateSceneConfig(scene.id, nextScene => {
+        if (options.defaultVisibility) {
+            nextScene.defaultVisibility = options.defaultVisibility;
+        }
+        nextScene.rules.push(createSceneRule(action, field, value));
+    });
+    showToast(i18n('ruleAdded'));
+}
+
+function createSceneCheckbox(checked, ariaLabel, onChange) {
+    const label = document.createElement('label');
+    label.className = 'settingsCtl sceneToggle';
+
+    const input = document.createElement('input');
+    input.className = 'settingsCtl';
+    input.type = 'checkbox';
+    input.checked = checked;
+    input.setAttribute('aria-label', ariaLabel);
+    input.addEventListener('change', onChange);
+
+    label.appendChild(input);
+    return label;
+}
+
+function renderActiveSceneOptions() {
+    if (!activeSceneInput) return;
+    const activeScene = getActiveScene();
+    activeSceneInput.textContent = '';
+
+    const allOption = document.createElement('option');
+    allOption.value = sceneAll;
+    allOption.textContent = i18n('sceneAll');
+    activeSceneInput.appendChild(allOption);
+
+    for (const scene of getSceneList()) {
+        const option = document.createElement('option');
+        option.value = scene.id;
+        option.textContent = scene.name;
+        activeSceneInput.appendChild(option);
+    }
+
+    activeSceneInput.value = isKnownScene(activeScene) ? activeScene : sceneAll;
+}
+
+function createSceneRuleButton(scene) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `settingsCtl scenePill${getActiveScene() === scene.id ? ' active' : ''}`;
+    button.textContent = scene.name;
+    button.addEventListener('click', () => {
+        setActiveScene(scene.id, true);
+        renderSceneControls();
+        processRefresh();
+    });
+    return button;
+}
+
+function createSceneRuleRow(scene, rule, index) {
+    const row = document.createElement('div');
+    row.className = 'sceneRuleRow';
+
+    const action = document.createElement('select');
+    action.className = 'settingsCtl';
+    for (const actionValue of sceneRuleActions) {
+        const option = document.createElement('option');
+        option.value = actionValue;
+        option.textContent = getRuleActionLabel(actionValue);
+        action.appendChild(option);
+    }
+    action.value = rule.action;
+    action.addEventListener('change', event => updateSceneConfig(scene.id, nextScene => {
+        nextScene.rules[index].action = event.target.value;
+    }));
+
+    const field = document.createElement('select');
+    field.className = 'settingsCtl';
+    for (const fieldValue of sceneRuleFields) {
+        const option = document.createElement('option');
+        option.value = fieldValue;
+        option.textContent = getRuleFieldLabel(fieldValue);
+        field.appendChild(option);
+    }
+    field.value = rule.field;
+    field.addEventListener('change', event => updateSceneConfig(scene.id, nextScene => {
+        nextScene.rules[index].field = event.target.value;
+    }));
+
+    const value = document.createElement('input');
+    value.className = 'settingsCtl sceneRuleValue';
+    value.type = 'text';
+    value.placeholder = i18n('ruleValue');
+    value.value = rule.value;
+    value.addEventListener('change', event => updateSceneConfig(scene.id, nextScene => {
+        nextScene.rules[index].value = event.target.value.trim();
+    }));
+
+    const remove = document.createElement('button');
+    remove.className = 'settingsCtl sceneIconButton';
+    remove.type = 'button';
+    remove.title = i18n('removeRule');
+    remove.textContent = '×';
+    remove.addEventListener('click', () => updateSceneConfig(scene.id, nextScene => {
+        nextScene.rules.splice(index, 1);
+    }));
+
+    row.append(action, field, value, remove);
+    return row;
+}
+
+function createPreviewRow(typeLabel, label, context, sceneId) {
+    const decision = evaluateSceneVisibility(context, sceneId);
+    const row = document.createElement('div');
+    row.className = `scenePreviewRow ${decision.visible ? 'visible' : 'hidden'}`;
+
+    const name = document.createElement('span');
+    name.className = 'scenePreviewName';
+    name.textContent = label;
+
+    const type = document.createElement('span');
+    type.className = 'scenePreviewType';
+    type.textContent = typeLabel;
+
+    const status = document.createElement('span');
+    status.className = 'scenePreviewStatus';
+    status.textContent = decision.visible ? i18n('ruleVisible') : i18n('ruleHidden');
+
+    const reason = document.createElement('span');
+    reason.className = 'scenePreviewReason';
+    reason.textContent = decision.matchedRule
+        ? `${getRuleActionLabel(decision.matchedRule.action)} ${getRuleFieldLabel(decision.matchedRule.field)}: ${decision.matchedRule.value}`
+        : i18n('ruleDefault');
+
+    row.append(type, name, status, reason);
+    return row;
+}
+
+function renderRulePreview(container, sceneId) {
+    const title = document.createElement('div');
+    title.className = 'scenePanelTitle';
+    title.textContent = i18n('rulePreview');
+    container.appendChild(title);
+
+    const list = document.createElement('div');
+    list.className = 'scenePreviewList';
+    container.appendChild(list);
+
+    sceneFolderOptions
+        .filter(folder => folder.id !== swipeDeckId)
+        .forEach(folder => list.appendChild(createPreviewRow(
+            i18n('sceneFolders'),
+            folder.title,
+            getFolderRuleContext(folder),
+            sceneId
+        )));
+
+    sceneHomeOptions
+        .filter(bookmark => bookmark.url)
+        .forEach(bookmark => list.appendChild(createPreviewRow(
+            i18n('homeBookmarks'),
+            bookmark.title || bookmark.url,
+            getBookmarkRuleContext(bookmark),
+            sceneId
+        )));
+
+    getRecentOpenTabs().then(tabs => {
+        tabs.slice(0, smartHomeRecentLimit).forEach(tab => list.appendChild(createPreviewRow(
+            i18n('smartHomeRecent'),
+            tab.title || tab.url,
+            getTabRuleContext(tab),
+            sceneId
+        )));
+    });
+}
+
+function renderSceneRuleSettings() {
+    if (!sceneRuleSettings || !settings) return;
 
     normalizeSceneSettings();
-    sceneFolderAssignments.textContent = '';
-    const foldersForSettings = sceneFolderOptions.length
-        ? sceneFolderOptions
-        : [{ id: swipeDeckId, title: homeFolderTitle, index: -1 }];
+    sceneRuleSettings.textContent = '';
 
-    for (const folder of foldersForSettings) {
-        const folderKey = getSceneFolderKey(folder.id);
-        const row = document.createElement('div');
-        row.className = 'sceneFolderAssignment';
+    const sceneList = document.createElement('div');
+    sceneList.className = 'scenePillList';
+    getSceneList().forEach(scene => sceneList.appendChild(createSceneRuleButton(scene)));
 
-        const name = document.createElement('span');
-        name.className = 'sceneFolderName';
-        name.textContent = folder.title;
-        row.appendChild(name);
+    const addSceneButton = document.createElement('button');
+    addSceneButton.type = 'button';
+    addSceneButton.className = 'settingsCtl scenePill';
+    addSceneButton.textContent = `+ ${i18n('addScene')}`;
+    addSceneButton.addEventListener('click', () => {
+        const name = i18n('addScene');
+        const id = createSceneId(name);
+        sceneSync.scenes.push(normalizeSceneConfig({
+            id,
+            name,
+            defaultVisibility: 'show',
+            modules: { ...defaultSceneModules },
+            rules: [],
+        }, id));
+        setActiveScene(id, true);
+        saveSceneSync().then(() => {
+            renderSceneControls();
+            processRefresh();
+        });
+    });
+    sceneList.appendChild(addSceneButton);
+    sceneRuleSettings.appendChild(sceneList);
 
-        for (const scene of assignableScenes) {
-            const label = document.createElement('label');
-            label.className = 'settingsCtl';
-
-            const input = document.createElement('input');
-            input.className = 'settingsCtl';
-            input.type = 'checkbox';
-            input.dataset.folderKey = folderKey;
-            input.dataset.scene = scene;
-            input.checked = settings.sceneFolders[scene].includes(folderKey);
-            input.setAttribute('aria-label', `${folder.title} ${i18n(scene === sceneWork ? 'sceneWork' : 'sceneLife')}`);
-            input.addEventListener('change', event => {
-                setFolderSceneMembership(
-                    event.target.dataset.folderKey,
-                    event.target.dataset.scene,
-                    event.target.checked
-                );
-            });
-
-            label.appendChild(input);
-            row.appendChild(label);
-        }
-
-        sceneFolderAssignments.appendChild(row);
+    const activeSceneId = getActiveScene();
+    const scene = getSceneById(activeSceneId);
+    if (!scene) {
+        const notice = document.createElement('p');
+        notice.className = 'sceneRuleNotice';
+        notice.textContent = `${i18n('sceneAll')}：${i18n('ruleDefault')}`;
+        sceneRuleSettings.appendChild(notice);
+        renderRulePreview(sceneRuleSettings, sceneAll);
+        return;
     }
+
+    const meta = document.createElement('div');
+    meta.className = 'sceneRuleMeta';
+
+    const nameInput = document.createElement('input');
+    nameInput.className = 'settingsCtl';
+    nameInput.type = 'text';
+    nameInput.value = scene.name;
+    nameInput.addEventListener('change', event => updateSceneConfig(scene.id, nextScene => {
+        nextScene.name = event.target.value.trim() || nextScene.name;
+    }, false));
+
+    const defaultVisibility = document.createElement('select');
+    defaultVisibility.className = 'settingsCtl';
+    [
+        ['show', i18n('optionShowByDefault')],
+        ['hide', i18n('optionHideByDefault')],
+    ].forEach(([value, label]) => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = label;
+        defaultVisibility.appendChild(option);
+    });
+    defaultVisibility.value = scene.defaultVisibility;
+    defaultVisibility.addEventListener('change', event => updateSceneConfig(scene.id, nextScene => {
+        nextScene.defaultVisibility = event.target.value === 'hide' ? 'hide' : 'show';
+    }));
+
+    const duplicateButton = document.createElement('button');
+    duplicateButton.className = 'settingsCtl sceneActionButton';
+    duplicateButton.type = 'button';
+    duplicateButton.textContent = i18n('duplicateScene');
+    duplicateButton.addEventListener('click', () => {
+        const id = createSceneId(`${scene.name}-copy`);
+        const copy = normalizeSceneConfig({
+            ...JSON.parse(JSON.stringify(scene)),
+            id,
+            name: `${scene.name} Copy`,
+        }, id);
+        sceneSync.scenes.push(copy);
+        setActiveScene(id, true);
+        saveSceneSync().then(() => {
+            renderSceneControls();
+            processRefresh();
+        });
+    });
+
+    const deleteButton = document.createElement('button');
+    deleteButton.className = 'settingsCtl sceneActionButton';
+    deleteButton.type = 'button';
+    deleteButton.textContent = i18n('deleteScene');
+    deleteButton.disabled = getSceneList().length <= 1;
+    deleteButton.addEventListener('click', () => {
+        if (getSceneList().length <= 1) return;
+        sceneSync.scenes = getSceneList().filter(item => item.id !== scene.id);
+        setActiveScene(sceneAll, true);
+        saveSceneSync().then(() => {
+            renderSceneControls();
+            processRefresh();
+        });
+    });
+
+    meta.append(nameInput, defaultVisibility, duplicateButton, deleteButton);
+    sceneRuleSettings.appendChild(meta);
+
+    const modules = document.createElement('div');
+    modules.className = 'sceneModuleGrid';
+    [
+        ['searchEnabled', i18n('smartHomeSearch')],
+        ['recentTabsEnabled', i18n('smartHomeRecent')],
+        ['homeBookmarksEnabled', i18n('homeBookmarks')],
+    ].forEach(([moduleKey, labelText]) => {
+        const label = document.createElement('span');
+        label.className = 'sceneModuleLabel';
+        label.textContent = labelText;
+        modules.append(label, createSceneCheckbox(
+            scene.modules[moduleKey],
+            labelText,
+            event => setSceneModuleValue(scene.id, moduleKey, event.target.checked)
+        ));
+    });
+    sceneRuleSettings.appendChild(modules);
+
+    const rulesTitle = document.createElement('div');
+    rulesTitle.className = 'scenePanelTitle';
+    rulesTitle.textContent = i18n('sceneRules');
+    sceneRuleSettings.appendChild(rulesTitle);
+
+    const rulesList = document.createElement('div');
+    rulesList.className = 'sceneRulesList';
+    scene.rules.forEach((rule, index) => rulesList.appendChild(createSceneRuleRow(scene, rule, index)));
+    sceneRuleSettings.appendChild(rulesList);
+
+    const addRuleButton = document.createElement('button');
+    addRuleButton.type = 'button';
+    addRuleButton.className = 'settingsCtl sceneActionButton';
+    addRuleButton.textContent = `+ ${i18n('addRule')}`;
+    addRuleButton.addEventListener('click', () => addRuleToScene(scene.id, createSceneRule('hide', 'folder.title', ''), false));
+    sceneRuleSettings.appendChild(addRuleButton);
+
+    renderRulePreview(sceneRuleSettings, scene.id);
+}
+
+function renderSceneControls() {
+    renderActiveSceneOptions();
+    renderSceneRuleSettings();
 }
 
 function clearDeckContainers(visibleFolderIds) {
@@ -633,10 +1480,11 @@ async function buildDialPages(swipeDeckId, currentFolderId) {
 
     normalizeSceneSettings();
     const children = await getChildren(swipeDeckId);
+    sceneHomeOptions = children.filter(bookmark => bookmark.url);
     if (!children.length) {
         // new install
         sceneFolderOptions = getSortedDeckFolders(children);
-        renderSceneFolderControls();
+        renderSceneControls();
         setCurrentFolderForScene(swipeDeckId, true);
         clearDeckContainers([swipeDeckId]);
         addFolderButton.style.display = 'none';
@@ -648,7 +1496,7 @@ async function buildDialPages(swipeDeckId, currentFolderId) {
     const folders = getSortedDeckFolders(children);
     sceneFolderOptions = folders;
     pruneSceneFolderAssignments(folders);
-    renderSceneFolderControls();
+    renderSceneControls();
     const visibleFolders = getVisibleFoldersForActiveScene(folders);
     const visibleFolderIds = visibleFolders.map(folder => folder.id);
     const nextCurrentFolder = getFolderForActiveScene(currentFolderId, visibleFolders);
@@ -697,10 +1545,11 @@ async function buildFolderPages(swipeDeckId) {
 
     normalizeSceneSettings();
     const children = await getChildren(swipeDeckId);
+    sceneHomeOptions = children.filter(bookmark => bookmark.url);
     if (!children.length) {
         // new install
         sceneFolderOptions = getSortedDeckFolders(children);
-        renderSceneFolderControls();
+        renderSceneControls();
         setCurrentFolderForScene(swipeDeckId, true);
         clearDeckContainers([swipeDeckId]);
         addFolderButton.style.display = 'none';
@@ -712,7 +1561,7 @@ async function buildFolderPages(swipeDeckId) {
     const folders = getSortedDeckFolders(children);
     sceneFolderOptions = folders;
     pruneSceneFolderAssignments(folders);
-    renderSceneFolderControls();
+    renderSceneControls();
     const visibleFolders = getVisibleFoldersForActiveScene(folders);
     const nextCurrentFolder = getFolderForActiveScene(currentFolder, visibleFolders);
 
@@ -741,6 +1590,9 @@ async function buildFolderPages(swipeDeckId) {
 
 function removeBookmark(url) {
     let id = targetNode.dataset.id;
+    if (currentFolder === swipeDeckId) {
+        removeHomeUrlFromSceneAssignments(url || targetTileHref);
+    }
     // animate removal
     targetNode.style.display = "none";
     layout(true);
@@ -843,25 +1695,126 @@ function moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSibli
     }
 }
 
-function showFolder(id) {
-    hideSettings();
-    let folders = document.getElementsByClassName('container');
-    for (let folder of folders) {
-        if (folder.id === id) {
-            folder.style.display = "flex"
-            folder.style.opacity = "0";
-            layoutFolder = true;
-            // transition between folders. todo more elegant solution
-            setTimeout(function () {
-                //layoutFolder = id;
-                folder.style.opacity = "1";
-                animate()
-            }, 20);
-        } else {
-            folder.style.display = "none";
-        }
+function userPrefersReducedMotion() {
+    return reduceMotionQuery?.matches === true;
+}
+
+function getFolderSwitchTiles(folder) {
+    if (!folder) return [];
+    return Array.from(folder.children).filter(child => child.classList?.contains('tile'));
+}
+
+function clearFolderSwitchTileVars(tiles) {
+    tiles.forEach(tile => {
+        tile.style.removeProperty('--tile-enter-delay');
+        tile.style.removeProperty('--tile-exit-delay');
+    });
+}
+
+function setFolderSwitchDelays(tiles, propertyName, staggerMs, staggerCap) {
+    tiles.forEach((tile, index) => {
+        const delay = Math.min(index, staggerCap) * staggerMs;
+        tile.style.setProperty(propertyName, `${delay}ms`);
+    });
+}
+
+function clearFolderSwitchMotion(preserveToken = false) {
+    if (!preserveToken) {
+        folderSwitchEnterToken++;
     }
-    // style the active tab
+
+    if (folderSwitchEnterTimer) {
+        clearTimeout(folderSwitchEnterTimer);
+        folderSwitchEnterTimer = null;
+    }
+
+    if (folderSwitchExitTimer) {
+        clearTimeout(folderSwitchExitTimer);
+        folderSwitchExitTimer = null;
+    }
+
+    clearFolderSwitchTileVars(folderSwitchEnterTiles);
+    clearFolderSwitchTileVars(folderSwitchExitTiles);
+    folderSwitchEnterTiles = [];
+    folderSwitchExitTiles = [];
+
+    for (const activeFolder of Array.from(document.getElementsByClassName(folderSwitchEnterClass))) {
+        activeFolder.classList.remove(folderSwitchEnterClass);
+    }
+    for (const activeFolder of Array.from(document.getElementsByClassName(folderSwitchExitClass))) {
+        activeFolder.classList.remove(folderSwitchExitClass);
+    }
+}
+
+function playFolderSwitchEnter(folder, switchToken = ++folderSwitchEnterToken) {
+    if (!folder || userPrefersReducedMotion()) return;
+
+    const tiles = getFolderSwitchTiles(folder);
+    if (!tiles.length) return;
+
+    if (folderSwitchEnterTimer) {
+        clearTimeout(folderSwitchEnterTimer);
+        folderSwitchEnterTimer = null;
+    }
+
+    clearFolderSwitchTileVars(folderSwitchEnterTiles);
+    folderSwitchEnterTiles = tiles;
+
+    for (const activeFolder of Array.from(document.getElementsByClassName(folderSwitchEnterClass))) {
+        activeFolder.classList.remove(folderSwitchEnterClass);
+    }
+
+    setFolderSwitchDelays(tiles, '--tile-enter-delay', folderSwitchEnterStaggerMs, folderSwitchEnterStaggerCap);
+
+    requestAnimationFrame(() => {
+        if (switchToken !== folderSwitchEnterToken) return;
+        folder.classList.add(folderSwitchEnterClass);
+    });
+
+    const staggerDuration = Math.min(tiles.length - 1, folderSwitchEnterStaggerCap) * folderSwitchEnterStaggerMs;
+    folderSwitchEnterTimer = setTimeout(() => {
+        if (switchToken !== folderSwitchEnterToken) return;
+        folder.classList.remove(folderSwitchEnterClass);
+        clearFolderSwitchTileVars(tiles);
+        folderSwitchEnterTiles = [];
+        folderSwitchEnterTimer = null;
+    }, folderSwitchEnterDuration + staggerDuration + 80);
+}
+
+function playFolderSwitchExit(folder, switchToken, onComplete) {
+    const tiles = getFolderSwitchTiles(folder);
+    if (!folder || userPrefersReducedMotion() || !tiles.length) {
+        onComplete();
+        return;
+    }
+
+    if (folderSwitchExitTimer) {
+        clearTimeout(folderSwitchExitTimer);
+        folderSwitchExitTimer = null;
+    }
+
+    clearFolderSwitchTileVars(folderSwitchExitTiles);
+    folderSwitchExitTiles = tiles;
+    setFolderSwitchDelays(tiles, '--tile-exit-delay', folderSwitchExitStaggerMs, folderSwitchExitStaggerCap);
+    folder.classList.remove(folderSwitchEnterClass);
+
+    requestAnimationFrame(() => {
+        if (switchToken !== folderSwitchEnterToken) return;
+        folder.classList.add(folderSwitchExitClass);
+    });
+
+    const staggerDuration = Math.min(tiles.length - 1, folderSwitchExitStaggerCap) * folderSwitchExitStaggerMs;
+    folderSwitchExitTimer = setTimeout(() => {
+        if (switchToken !== folderSwitchEnterToken) return;
+        folder.classList.remove(folderSwitchExitClass);
+        clearFolderSwitchTileVars(tiles);
+        folderSwitchExitTiles = [];
+        folderSwitchExitTimer = null;
+        onComplete();
+    }, folderSwitchExitDuration + staggerDuration + 40);
+}
+
+function updateActiveFolderTitle(id) {
     let folderTitles = document.getElementsByClassName('folderTitle');
     for (let title of folderTitles) {
         if (title.attributes.folderid.value === id) {
@@ -869,6 +1822,42 @@ function showFolder(id) {
         } else {
             title.classList.remove('activeFolder');
         }
+    }
+}
+
+function revealFolder(id, folders, shouldAnimateEntry, switchToken) {
+    for (let folder of folders) {
+        if (folder.id === id) {
+            folder.style.display = "flex";
+            folder.style.opacity = "1";
+            layoutFolder = true;
+            if (shouldAnimateEntry) {
+                playFolderSwitchEnter(folder, switchToken);
+            }
+            requestAnimationFrame(animate);
+        } else {
+            folder.style.display = "none";
+        }
+    }
+}
+
+function showFolder(id) {
+    hideSettings();
+    const folders = Array.from(document.getElementsByClassName('container'));
+    const shouldAnimateSwitch = currentFolder && currentFolder !== id && !userPrefersReducedMotion();
+    const visibleFolder = folders.find(folder => folder.id !== id && folder.style.display !== "none");
+    const switchToken = ++folderSwitchEnterToken;
+
+    clearFolderSwitchMotion(true);
+    updateActiveFolderTitle(id);
+
+    if (shouldAnimateSwitch && visibleFolder) {
+        playFolderSwitchExit(visibleFolder, switchToken, () => {
+            if (switchToken !== folderSwitchEnterToken) return;
+            revealFolder(id, folders, true, switchToken);
+        });
+    } else {
+        revealFolder(id, folders, false, switchToken);
     }
 }
 
@@ -1236,7 +2225,7 @@ function saveFolder() {
             title: name,
             parentId: swipeDeckId
         }).then(node => {
-            if (!assignFolderToActiveScene(node.id)) {
+            if (!assignFolderToActiveScene(node)) {
                 processRefresh();
             }
             hideModals();
@@ -1274,7 +2263,7 @@ function removeFolder() {
     chrome.bookmarks.removeTree(targetFolder).then(() => {
         hideModals();
         targetFolderLink?.remove();
-        removeFolderFromSceneAssignments(targetFolder);
+        removeFolderFromSceneAssignments(targetFolder, targetFolderName);
         folders.splice(folders.indexOf(targetFolder), 1);
         if (!folders.length) {
             //document.getElementById('homeFolderLink').remove();
@@ -1367,13 +2356,10 @@ async function printNewSetup() {
         folderContainerEl.classList.add('container');
         folderContainerEl.style.display = currentFolder === swipeDeckId ? 'flex' : 'none';
         //folderContainerEl.style.opacity = settings.rememberFolder && currentFolder === parentId ? '0' : '1';
-        folderContainerEl.style.opacity = "0";
+        folderContainerEl.style.opacity = currentFolder === swipeDeckId ? "1" : "0";
 
         if (currentFolder === swipeDeckId) {
-            setTimeout(() => {
-                folderContainerEl.style.opacity = "1";
-                animate();
-            }, 20);
+            requestAnimationFrame(animate);
             document.querySelector(`[folderid="${currentFolder}"]`)?.classList.add('activeFolder');
             requestAnimationFrame(() => centerFolderInRail(currentFolder, 'auto'));
         }
@@ -1440,7 +2426,300 @@ function getFaviconUrl(pageUrl, size = 64) {
     return faviconUrl.toString();
 }
 
+function isSupportedBookmarkUrl(url) {
+    return url?.startsWith("http")
+        || url?.startsWith("file:")
+        || url?.startsWith("chrome:");
+}
+
+function createBookmarkTile(bookmark, extraClass = '') {
+    let a = document.createElement('a');
+    a.classList.add('tile');
+    if (extraClass) {
+        a.classList.add(...extraClass.split(' ').filter(Boolean));
+    }
+    a.href = bookmark.url;
+    a.setAttribute('data-id', bookmark.id);
+
+    let main = document.createElement('div');
+    main.classList.add('tile-main');
+
+    let content = document.createElement('div');
+    content.setAttribute('id', bookmark.parentId + "-" + bookmark.id);
+    content.classList.add('tile-content', 'favicon-thumb');
+    content.style.backgroundImage = `url("${getFaviconUrl(bookmark.url)}")`;
+
+    let title = document.createElement('div');
+    title.classList.add('tile-title');
+    if (!settings.showTitles) {
+        title.classList.add('hide');
+    }
+    title.textContent = bookmark.title || bookmark.url;
+
+    main.append(content, title);
+    a.appendChild(main);
+    return a;
+}
+
+function ensureFolderContainer(parentId, extraClass = '') {
+    let folderContainerEl = document.getElementById(parentId);
+    if (!folderContainerEl) {
+        folderContainerEl = document.createElement('div');
+        folderContainerEl.id = parentId;
+        folderContainerEl.classList.add('container');
+        folderContainerEl.style.display = currentFolder === parentId ? 'flex' : 'none';
+        folderContainerEl.style.opacity = currentFolder === parentId ? "1" : "0";
+
+        if (currentFolder === parentId) {
+            requestAnimationFrame(animate);
+            document.querySelector(`[folderid="${currentFolder}"]`)?.classList.add('activeFolder');
+        }
+        bookmarksContainerParent.append(folderContainerEl);
+    }
+
+    if (extraClass) {
+        folderContainerEl.classList.add(...extraClass.split(' ').filter(Boolean));
+    }
+
+    return folderContainerEl;
+}
+
+function createSmartHomeSection(titleText, className = '') {
+    const section = document.createElement('section');
+    section.className = `smartHomeSection ${className}`.trim();
+
+    const title = document.createElement('h2');
+    title.className = 'smartHomeTitle';
+    title.textContent = titleText;
+    section.appendChild(title);
+
+    return section;
+}
+
+function getHomeBookmarksForScene(bookmarks) {
+    const homeBookmarks = bookmarks.filter(bookmark => bookmark.url && isSupportedBookmarkUrl(bookmark.url));
+    const activeScene = getActiveScene();
+    if (activeScene === sceneAll) {
+        return homeBookmarks;
+    }
+
+    return homeBookmarks.filter(bookmark => evaluateSceneVisibility(getBookmarkRuleContext(bookmark), activeScene).visible);
+}
+
+function matchesScenePattern(value, patterns) {
+    const haystack = String(value || '').toLowerCase();
+    return patterns.some(pattern => haystack.includes(pattern.toLowerCase()));
+}
+
+function isSupportedRecentTabUrl(url) {
+    if (!url || url.startsWith(chrome.runtime.getURL('')) || url === 'chrome://newtab/') {
+        return false;
+    }
+    return isSupportedBookmarkUrl(url);
+}
+
+function getTabSortTime(tab) {
+    return tab.openedAt || tab.lastAccessed || tab.id || 0;
+}
+
+async function getRecentOpenTabs() {
+    if (!chrome.tabs?.query) {
+        return [];
+    }
+
+    const [currentTab, tabs, storedTabs] = await Promise.all([
+        chrome.tabs.getCurrent ? chrome.tabs.getCurrent().catch(() => null) : Promise.resolve(null),
+        chrome.tabs.query({ currentWindow: true }).catch(() => chrome.tabs.query({})),
+        chrome.storage.local.get(recentOpenedTabsStorageKey).catch(() => ({})),
+    ]);
+    const openedTabs = storedTabs[recentOpenedTabsStorageKey] || {};
+
+    return tabs
+        .filter(tab => tab.id !== currentTab?.id && isSupportedRecentTabUrl(tab.url))
+        .map(tab => ({
+            id: tab.id,
+            windowId: tab.windowId,
+            title: tab.title,
+            url: tab.url,
+            favIconUrl: tab.favIconUrl,
+            openedAt: openedTabs[String(tab.id)]?.openedAt || null,
+            lastAccessed: tab.lastAccessed || null,
+        }))
+        .sort((a, b) => getTabSortTime(b) - getTabSortTime(a));
+}
+
+function filterRecentTabItems(items, scene) {
+    const seen = new Set();
+    const filtered = [];
+
+    for (const item of items) {
+        if (!item.url || !isSupportedRecentTabUrl(item.url)) continue;
+        if (seen.has(item.id)) continue;
+        if (!evaluateSceneVisibility(getTabRuleContext(item), scene.id).visible) continue;
+        seen.add(item.id);
+        filtered.push(item);
+        if (filtered.length >= smartHomeRecentLimit) break;
+    }
+
+    return filtered;
+}
+
+function formatRelativeTime(timestamp) {
+    if (!timestamp) return '';
+    const diffMinutes = Math.max(1, Math.round((Date.now() - timestamp) / 60000));
+    if (diffMinutes < 60) return `${diffMinutes}m`;
+    const diffHours = Math.round(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours}h`;
+    return `${Math.round(diffHours / 24)}d`;
+}
+
+function createRecentTabLink(item) {
+    const link = document.createElement('a');
+    link.className = 'smartHomeRecentItem';
+    link.href = item.url;
+    link.setAttribute('data-id', item.id || item.url);
+    link.dataset.tabId = String(item.id);
+    link.dataset.windowId = String(item.windowId);
+
+    const icon = document.createElement('span');
+    icon.className = 'smartHomeRecentIcon';
+    icon.style.backgroundImage = `url("${item.favIconUrl || getFaviconUrl(item.url, 32)}")`;
+
+    const text = document.createElement('span');
+    text.className = 'smartHomeRecentText';
+
+    const title = document.createElement('span');
+    title.className = 'smartHomeRecentTitle';
+    title.textContent = item.title || item.url;
+
+    const url = document.createElement('span');
+    url.className = 'smartHomeRecentUrl';
+    url.textContent = item.url;
+
+    text.append(title, url);
+
+    const time = document.createElement('span');
+    time.className = 'smartHomeRecentTime';
+    time.textContent = formatRelativeTime(item.openedAt || item.lastAccessed);
+
+    link.append(icon, text, time);
+    return link;
+}
+
+async function renderRecentPagesSection(parent, scene) {
+    const section = createSmartHomeSection(i18n('smartHomeRecent'), 'smartHomeRecentSection');
+    parent.appendChild(section);
+
+    if (!chrome.tabs?.query) {
+        const message = document.createElement('p');
+        message.className = 'smartHomeEmpty';
+        message.textContent = i18n('recentUnavailable');
+        section.appendChild(message);
+        return;
+    }
+
+    const recentItems = filterRecentTabItems(await getRecentOpenTabs(), scene);
+    if (!recentItems.length) {
+        const message = document.createElement('p');
+        message.className = 'smartHomeEmpty';
+        message.textContent = i18n('recentEmpty');
+        section.appendChild(message);
+        return;
+    }
+
+    const list = document.createElement('div');
+    list.className = 'smartHomeRecentList';
+    recentItems.forEach(item => list.appendChild(createRecentTabLink(item)));
+    section.appendChild(list);
+}
+
+function renderSmartHomeSearch(parent) {
+    const section = createSmartHomeSection(i18n('smartHomeSearch'), 'smartHomeSearchSection');
+    const form = document.createElement('form');
+    form.className = 'smartHomeSearchForm settingsCtl';
+
+    const input = document.createElement('input');
+    input.className = 'smartHomeSearchInput settingsCtl';
+    input.type = 'text';
+    input.placeholder = i18n('searchPlaceholder');
+    input.setAttribute('aria-label', i18n('smartHomeSearch'));
+
+    const submit = document.createElement('button');
+    submit.className = 'smartHomeSearchSubmit settingsCtl';
+    submit.type = 'submit';
+    submit.title = i18n('smartHomeSearch');
+    submit.setAttribute('aria-label', i18n('smartHomeSearch'));
+    submit.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" aria-hidden="true"><path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"/></svg>';
+
+    form.addEventListener('submit', async event => {
+        event.preventDefault();
+        const searchTerm = input.value.trim();
+        if (searchTerm) {
+            await queryDefaultSearch(searchTerm);
+        }
+    });
+
+    form.append(input, submit);
+    section.appendChild(form);
+    parent.appendChild(section);
+}
+
+async function printSmartHome(bookmarks, parentId) {
+    const folderContainerEl = ensureFolderContainer(parentId, 'smartHomeContainer');
+    folderContainerEl.textContent = '';
+
+    const smartHome = document.createElement('div');
+    smartHome.className = 'smartHome';
+
+    const sceneRules = getSceneRules(getActiveScene());
+
+    if (sceneRules.modules.searchEnabled) {
+        renderSmartHomeSearch(smartHome);
+    }
+
+    const fixedBookmarks = getHomeBookmarksForScene(bookmarks);
+    if (sceneRules.modules.homeBookmarksEnabled && (fixedBookmarks.length || settings.showAddSite)) {
+        const fixedSection = createSmartHomeSection(i18n('homeBookmarks'), 'smartHomeBookmarksSection');
+        const grid = document.createElement('div');
+        grid.className = 'smartHomeTileGrid';
+        fixedBookmarks.forEach(bookmark => grid.appendChild(createBookmarkTile(bookmark, 'smartHomeTile')));
+        if (settings.showAddSite) {
+            grid.appendChild(createNewDialButton(parentId));
+        }
+        fixedSection.appendChild(grid);
+        smartHome.appendChild(fixedSection);
+    }
+
+    if (sceneRules.modules.recentTabsEnabled) {
+        await renderRecentPagesSection(smartHome, sceneRules);
+    }
+
+    if (!smartHome.children.length) {
+        const emptyContent = document.createElement('div');
+        emptyContent.className = 'default-content';
+
+        const title = document.createElement('h1');
+        title.className = 'default-content';
+        title.textContent = i18n('sceneEmptyTitle');
+
+        const message = document.createElement('p');
+        message.className = 'default-content helpText';
+        message.textContent = i18n('sceneEmptyMessage');
+
+        emptyContent.append(title, message);
+        smartHome.appendChild(emptyContent);
+    }
+
+    folderContainerEl.appendChild(smartHome);
+    bookmarksContainerParent.scrollTop = scrollPos;
+}
+
 async function printBookmarks(bookmarks, parentId) {
+    if (parentId === swipeDeckId) {
+        await printSmartHome(bookmarks, parentId);
+        return;
+    }
+
     let fragment = document.createDocumentFragment();
 
     // Collect URLs for batch thumbnail fetching
@@ -1460,36 +2739,8 @@ async function printBookmarks(bookmarks, parentId) {
         for (let bookmark of bookmarks) {
             if (!bookmark.url && bookmark.title && bookmark.parentId === swipeDeckId) continue;
 
-            if (bookmark.url?.startsWith("http") || bookmark.url?.startsWith("file:") || bookmark.url?.startsWith("chrome:")) {
-                //let images = thumbnails[bookmark.url] || {};
-                //let thumbUrl = images.thumbnails?.[images.thumbIndex] || null;
-                //let thumbBg = images.bgColor || null;
-
-                let a = document.createElement('a');
-                a.classList.add('tile');
-                a.href = bookmark.url;
-                a.setAttribute('data-id', bookmark.id);
-
-                let main = document.createElement('div');
-                main.classList.add('tile-main');
-
-                let content = document.createElement('div');
-                content.setAttribute('id', bookmark.parentId + "-" + bookmark.id);
-                content.classList.add('tile-content', 'favicon-thumb');
-                //content.style.backgroundImage = thumbBg ? `url('${thumbUrl}'), ${thumbBg}` : '';
-                //content.style.backgroundColor = thumbBg ? '' : 'rgba(255, 255, 255, 0.5)';
-                content.style.backgroundImage = `url("${getFaviconUrl(bookmark.url)}")`;
-
-                let title = document.createElement('div');
-                title.classList.add('tile-title');
-                if (!settings.showTitles) {
-                    title.classList.add('hide');
-                }
-                title.textContent = bookmark.title;
-
-                main.append(content, title);
-                a.appendChild(main);
-                fragment.appendChild(a);
+            if (isSupportedBookmarkUrl(bookmark.url)) {
+                fragment.appendChild(createBookmarkTile(bookmark));
             }
         }
     }
@@ -1503,24 +2754,7 @@ async function printBookmarks(bookmarks, parentId) {
     }
 
     // Ensure the container exists
-    let folderContainerEl = document.getElementById(parentId);
-    if (!folderContainerEl) {
-        folderContainerEl = document.createElement('div');
-        folderContainerEl.id = parentId;
-        folderContainerEl.classList.add('container');
-        folderContainerEl.style.display = currentFolder === parentId ? 'flex' : 'none';
-        //folderContainerEl.style.opacity = settings.rememberFolder && currentFolder === parentId ? '0' : '1';
-        folderContainerEl.style.opacity = "0";
-
-        if (currentFolder === parentId) {
-            setTimeout(() => {
-                folderContainerEl.style.opacity = "1";
-                animate();
-            }, 20);
-            document.querySelector(`[folderid="${currentFolder}"]`)?.classList.add('activeFolder');
-        }
-        bookmarksContainerParent.append(folderContainerEl);
-    }
+    let folderContainerEl = ensureFolderContainer(parentId);
 
     // Destroy any previous Sortable instance to avoid duplicate event handlers after refresh
     let existingSortable = Sortable.get(folderContainerEl);
@@ -1579,7 +2813,7 @@ function hideMenus() {
 }
 
 function openSettings() {
-    renderSceneFolderControls();
+    renderSceneControls();
     sidenav.style.boxShadow = "0px 2px 8px 0px rgba(0,0,0,0.5)";
     sidenav.style.transform = "translateX(0%)";
 }
@@ -1822,6 +3056,10 @@ function createDial() {
         url: url,
         parentId: createDialModalURL.parentId
     }).then(node => {
+        const scene = getSceneById(getActiveScene());
+        if (node.parentId === swipeDeckId && scene?.defaultVisibility === 'hide') {
+            addRuleToScene(scene.id, createSceneRule('show', 'bookmark.url', node.url));
+        }
         hideModals();
     });
 }
@@ -1863,6 +3101,25 @@ function openTile(tile, event) {
     }
 
     return false;
+}
+
+async function activateRecentTab(tile) {
+    const tabId = Number(tile?.dataset?.tabId);
+    const windowId = Number(tile?.dataset?.windowId);
+    if (!Number.isInteger(tabId)) {
+        return false;
+    }
+
+    try {
+        await chrome.tabs.update(tabId, { active: true });
+        if (Number.isInteger(windowId) && chrome.windows?.update) {
+            await chrome.windows.update(windowId, { focused: true });
+        }
+        return true;
+    } catch (error) {
+        console.warn('Unable to activate recent tab:', error);
+        return false;
+    }
 }
 
 function offscreenCanvasShim(w, h) {
@@ -2136,6 +3393,9 @@ function saveBookmarkSettings() {
                             title,
                             url: newUrl
                         });
+                        if (currentParent === swipeDeckId) {
+                            replaceHomeUrlSceneAssignment(url, newUrl);
+                        }
                     }
 
                     if (url !== newUrl && toastContent.innerText === '') {
@@ -2254,35 +3514,50 @@ function readURL(input) {
     }
 }
 
+function getWallpaperResizeTarget(imgWidth, imgHeight) {
+    const pixelRatio = Math.max(1, Math.min(window.devicePixelRatio || 1, 3));
+    const viewportWidth = Math.max(window.innerWidth || 0, screen.width || 0);
+    const viewportHeight = Math.max(window.innerHeight || 0, screen.height || 0);
+    const targetWidth = Math.ceil(viewportWidth * pixelRatio);
+    const targetHeight = Math.ceil(viewportHeight * pixelRatio);
+    const scale = Math.min(1, Math.max(targetWidth / imgWidth, targetHeight / imgHeight));
+
+    return {
+        width: Math.round(imgWidth * scale),
+        height: Math.round(imgHeight * scale),
+        shouldResize: scale < 1,
+    };
+}
+
 function resizeBackground(dataURI) {
     return new Promise(function (resolve, reject) {
         let img = new Image();
         img.onload = function () {
-            if (this.height > screen.height) {
-                let height = screen.height;
-                let ratio = height / this.height;
-                let width = Math.round(this.width * ratio);
+            const target = getWallpaperResizeTarget(this.width, this.height);
 
+            if (target.shouldResize) {
                 let canvas = document.createElement('canvas');
                 let ctx = canvas.getContext('2d', { willReadFrequently: true });
                 ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
 
-                canvas.width = width;
-                canvas.height = height;
-                ctx.drawImage(this, 0, 0, width, height);
+                canvas.width = target.width;
+                canvas.height = target.height;
+                ctx.drawImage(this, 0, 0, target.width, target.height);
 
                 // todo: remove this whenever firefox supports webp. in meantime we fallback to jpg for speed
                 if (chrome.runtime.getBrowserInfo) {
-                    const newDataURI = canvas.toDataURL('image/jpeg', 0.8);
+                    const newDataURI = canvas.toDataURL('image/jpeg', 0.94);
                     resolve(newDataURI);
                 } else {
-                    const newDataURI = canvas.toDataURL('image/webp', 0.87);
+                    const newDataURI = canvas.toDataURL('image/webp', 0.95);
                     resolve(newDataURI);
                 }
             } else {
                 resolve(dataURI);
             }
         };
+        img.onerror = reject;
         img.src = dataURI;
     })
 }
@@ -2373,8 +3648,6 @@ function applySettings() {
         applyThemeMode();
         const backgroundColor = getThemeAwareSettingColor('backgroundColor');
         const textColor = getThemeAwareSettingColor('textColor');
-        clearInitialPaintClasses();
-        syncInitialPaintSnapshot(backgroundColor, textColor);
 
         if (settings.wallpaper && settings.wallpaperSrc) {
             // perf hack for default gradient bg image. user selected images are data URIs
@@ -2386,14 +3659,18 @@ function applySettings() {
             } else {
                 // Remove the gradient class and apply custom background
                 document.body.classList.remove('gradientBackground');
-                document.body.style.background = `url("${settings.wallpaperSrc}") no-repeat top center fixed`;
+                document.body.style.background = `linear-gradient(var(--background-dim-overlay), var(--background-dim-overlay)), url("${settings.wallpaperSrc}") no-repeat top center fixed`;
                 document.body.style.backgroundSize = 'cover';
             }
         } else {
             // Remove the gradient class and apply solid background color
             document.body.classList.remove('gradientBackground');
-            document.body.style.background = backgroundColor;
+            document.body.style.background = `linear-gradient(var(--background-dim-overlay), var(--background-dim-overlay)), ${backgroundColor}`;
+            document.body.style.backgroundSize = '';
         }
+
+        clearInitialPaintClasses();
+        syncInitialPaintSnapshot(backgroundColor, textColor);
 
         if (textColor) {
             document.documentElement.style.setProperty('--color', textColor);
@@ -2539,19 +3816,19 @@ function applySettings() {
         }
 
         if (settings.showClock) {
-            clock.style.setProperty('--clock', 'block');
+            clock.style.setProperty('--clock', 'flex');
         } else {
             clock.style.setProperty('--clock', 'none');
         }
 
         if (settings.showSettingsBtn) {
-            settingsBtn.style.setProperty('--settings', 'block');
+            settingsBtn.style.setProperty('--settings', 'grid');
         } else {
             settingsBtn.style.setProperty('--settings', 'none');
         }
 
-        if (settings.showSearchBtn) {
-            searchBtn.style.setProperty('--search', 'block');
+        if (settings.showSearchBtn && getSceneRules(getActiveScene()).modules.searchEnabled) {
+            searchBtn.style.setProperty('--search', 'grid');
         } else {
             searchBtn.style.setProperty('--search', 'none');
         }
@@ -2597,10 +3874,11 @@ function applySettings() {
         newTabSoundInput.checked = settings.newTabSound !== false;
         newTabSoundTypeInput.value = validNewTabSoundTypes.includes(settings.newTabSoundType)
             ? settings.newTabSoundType
-            : soundSoda;
-        activeSceneInput.value = settings.activeScene || sceneAll;
+            : soundOpenZen;
+        renderActiveSceneOptions();
+        activeSceneInput.value = getActiveScene();
         rememberFolderInput.checked = settings.rememberFolder;
-        renderSceneFolderControls();
+        renderSceneControls();
 
         setWallpaperPreview(settings.wallpaperSrc || defaults.wallpaperSrc);
 
@@ -2630,15 +3908,18 @@ function saveSettings() {
     settings.newTabSound = newTabSoundInput.checked;
     settings.newTabSoundType = validNewTabSoundTypes.includes(newTabSoundTypeInput.value)
         ? newTabSoundTypeInput.value
-        : soundSoda;
-    settings.activeScene = validScenes.includes(activeSceneInput.value) ? activeSceneInput.value : sceneAll;
+        : soundOpenZen;
+    setActiveScene(activeSceneInput.value);
     settings.rememberFolder = rememberFolderInput.checked;
     settings.currentFolder = currentFolder || null;
     normalizeSceneSettings();
 
     applySettings();
 
-    chrome.storage.local.set({ settings })
+    Promise.all([
+        chrome.storage.local.set({ settings }),
+        saveSceneLocal(),
+    ])
         .then(() => {
             /*
             settingsToast.style.opacity = "1";
@@ -2653,6 +3934,9 @@ function saveSettings() {
 
 // override context menu
 document.addEventListener("contextmenu", function (e) {
+    if (e.target.closest?.('.smartHomeSearchForm')) {
+        return;
+    }
     if (e.target.type === 'text' && (e.target.id === 'modalTitle' || e.target.id === 'modalURL' || e.target.id === 'modalImageURLInput' || e.target.id === 'createDialModalURL')) {
         return;
     }
@@ -2662,10 +3946,10 @@ document.addEventListener("contextmenu", function (e) {
         return;
     }
     hideSettings();
-    const tileTarget = e.target.closest ? e.target.closest('.tile:not(.createDial)') : null;
-    if (tileTarget && (e.target.classList.contains('tile-content') || e.target.classList.contains('tile-title') || document.body.classList.contains('flowDial'))) {
+    const tileTarget = e.target.closest ? e.target.closest('.tile:not(.createDial), .smartHomeRecentItem') : null;
+    if (tileTarget && (tileTarget.classList.contains('smartHomeRecentItem') || e.target.classList.contains('tile-content') || e.target.classList.contains('tile-title') || document.body.classList.contains('flowDial'))) {
         const tileContent = tileTarget.querySelector('.tile-content');
-        const tileTitle = tileTarget.querySelector('.tile-title');
+        const tileTitle = tileTarget.querySelector('.tile-title, .smartHomeRecentTitle');
         targetNode = tileTarget;
         targetTileHref = tileTarget.href;
         targetTileId = tileContent?.id;
@@ -2686,12 +3970,18 @@ document.addEventListener("contextmenu", function (e) {
 });
 
 // todo: tidy this up
-window.addEventListener("click", e => {
+window.addEventListener("click", async e => {
     if (typeof e.target.className === 'string' && e.target.className.indexOf('settingsCtl') >= 0) {
         return;
     }
-    if (e.target.closest && e.target.closest('.tile:not(.createDial)')) {
-        let tile = e.target.closest('.tile');
+    if (e.target.closest && e.target.closest('.tile:not(.createDial), .smartHomeRecentItem')) {
+        let tile = e.target.closest('.tile:not(.createDial), .smartHomeRecentItem');
+        if (tile.classList.contains('smartHomeRecentItem') && !e.metaKey && !e.ctrlKey && e.button !== 1) {
+            e.preventDefault();
+            if (await activateRecentTab(tile)) {
+                return;
+            }
+        }
         if (openTile(tile, e)) {
             e.preventDefault();
         }
@@ -2701,8 +3991,8 @@ window.addEventListener("click", e => {
 });
 
 window.addEventListener("auxclick", e => {
-    if (e.button === 1 && e.target.closest && e.target.closest('.tile:not(.createDial)')) {
-        let tile = e.target.closest('.tile');
+    if (e.button === 1 && e.target.closest && e.target.closest('.tile:not(.createDial), .smartHomeRecentItem')) {
+        let tile = e.target.closest('.tile:not(.createDial), .smartHomeRecentItem');
         if (openTile(tile, e)) {
             e.preventDefault();
         }
@@ -2712,7 +4002,7 @@ window.addEventListener("auxclick", e => {
 // listen for menu item
 window.addEventListener("mousedown", e => {
     hideMenus();
-    if (e.target.closest && e.target.closest('.sceneFolderPanel')) {
+    if (e.target.closest && e.target.closest('.sceneRulePanel')) {
         return;
     }
     if (e.target.type === 'text' || e.target.id === 'themeMode' || e.target.id === 'maxcols' || e.target.id === 'defaultSort' || e.target.id === 'defaultOpen' || e.target.id === 'newTabSoundType' || e.target.id === 'activeScene' || e.target.id === 'dialSize' || e.target.id === 'dialRatio') {
@@ -2775,23 +4065,42 @@ window.addEventListener("mousedown", e => {
                     openAllTabs();
                     break;
                 case 'edit':
+                    if (!targetTileId) break;
                     buildModal(targetTileHref, targetTileTitle).then(() => {
                         modalShowEffect(modalContent, modal);
                     });
                     break;
                 case 'refresh':
+                    if (!targetTileId) break;
                     refreshThumbnails(targetTileHref, targetTileId);
                     break;
+                case 'hideSimilarUrl': {
+                    const domain = getDomainFromUrl(targetTileHref);
+                    const isRecentTab = targetNode?.classList?.contains('smartHomeRecentItem');
+                    addShortcutRule(
+                        'hide',
+                        domain ? (isRecentTab ? 'tab.domain' : 'bookmark.domain') : (isRecentTab ? 'tab.url' : 'bookmark.url'),
+                        domain || targetTileHref
+                    );
+                    break;
+                }
                 case 'refreshAll':
                     modalShowEffect(refreshAllModalContent, refreshAllModal);
                     break;
                 case 'delete':
+                    if (!targetTileId) break;
                     removeBookmark(targetTileHref);
                     break;
                 case 'editFolder':
                     //buildFolderModal(targetFolder, targetFolderName);
                     editFolderModalName.value = targetFolderName;
                     modalShowEffect(editFolderModalContent, editFolderModal);
+                    break;
+                case 'hideSimilarFolder':
+                    addShortcutRule('hide', 'folder.title', targetFolderName);
+                    break;
+                case 'showOnlySimilarFolder':
+                    addShortcutRule('show', 'folder.title', targetFolderName, { defaultVisibility: 'hide' });
                     break;
                 case 'deleteFolder':
                     deleteFolderModalName.textContent = targetFolderName;
@@ -2938,7 +4247,7 @@ newTabSoundTypeInput.oninput = function (e) {
 }
 
 activeSceneInput.oninput = function (e) {
-    if (settings.activeScene !== activeSceneInput.value) {
+    if (getActiveScene() !== activeSceneInput.value) {
         saveSettings();
         processRefresh();
     }
@@ -2946,6 +4255,10 @@ activeSceneInput.oninput = function (e) {
 
 wallPaperEnabled.oninput = function (e) {
     saveSettings()
+}
+
+resetWallpaperBtn.onclick = function () {
+    resetWallpaperToDefault();
 }
 
 color_picker.onchange = function () {
@@ -3134,6 +4447,7 @@ function prepareExport() {
             bookmarks: [],
             folders: [],
             settings: {},
+            sceneSync: {},
             dials: []
         }
     };
@@ -3184,6 +4498,7 @@ function prepareExport() {
             }
 
             // Save as file; requires downloads permission
+            swipeDeckJson.ohMySwipeDeck.sceneSync = normalizeSceneSync(sceneSync);
             const blob = new Blob([JSON.stringify(swipeDeckJson)], { type: 'application/json' });
             const today = new Date();
             const dateString = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
@@ -3211,8 +4526,13 @@ helpBtn.onclick = function () {
 resetSettingsBtn.onclick = function () {
     if (confirm(i18n('resetSettingsConfirm'))) {
         settings = cloneDefaultSettings();
+        sceneSync = cloneDefaultSceneSync();
+        sceneLocal = normalizeSceneLocal({ activeSceneId: sceneAll });
         setCurrentFolderForScene(null);
-        chrome.storage.local.set({ settings }).then(() => {
+        Promise.all([
+            chrome.storage.local.set({ settings, [sceneLocalStorageKey]: sceneLocal }),
+            saveSceneSync(),
+        ]).then(() => {
             applySettings();
             processRefresh();
         });
@@ -3239,11 +4559,50 @@ searchInput.addEventListener('input', function (e) {
     filterDials(searchTerm);
 });
 
+searchInput.addEventListener('keydown', async function (e) {
+    if (e.key === 'Escape') {
+        hideSearch();
+        return;
+    }
+
+    if (e.key !== 'Enter') {
+        return;
+    }
+
+    const searchTerm = searchInput.value.trim();
+    if (!searchTerm) {
+        return;
+    }
+
+    e.preventDefault();
+    await queryDefaultSearch(searchTerm);
+});
+
+async function queryDefaultSearch(searchTerm) {
+    const disposition = settings.defaultOpen === 'newTab' ? 'NEW_TAB' : 'CURRENT_TAB';
+    try {
+        if (chrome.search?.query) {
+            await chrome.search.query({ text: searchTerm, disposition });
+            return;
+        }
+        if (typeof browser !== 'undefined' && browser.search?.query) {
+            await browser.search.query({ text: searchTerm, disposition });
+            return;
+        }
+    } catch (error) {
+        console.warn('Unable to search with default provider:', error);
+    }
+    showToast(i18n('searchUnavailable'));
+}
+
 function filterDials(searchTerm) {
     const currentParent = currentFolder;
     if (!currentParent) return;
 
-    const dials = document.querySelectorAll(`[id="${currentParent}"] > .tile`);
+    const currentContainer = document.getElementById(currentParent);
+    if (!currentContainer) return;
+
+    const dials = currentContainer.querySelectorAll('.tile, .smartHomeRecentItem');
 
     dials.forEach(dial => {
         if (!settings.showAddSite && dial.classList.contains('createDial')) {
@@ -3251,8 +4610,8 @@ function filterDials(searchTerm) {
             return;
         }
 
-        const title = dial.querySelector('.tile-title')?.textContent.toLowerCase();
-        const url = dial.href.toLowerCase();
+        const title = (dial.querySelector('.tile-title, .smartHomeRecentTitle')?.textContent || '').toLowerCase();
+        const url = (dial.href || dial.querySelector('.smartHomeRecentUrl')?.textContent || '').toLowerCase();
 
         if (title && title.includes(searchTerm) || url.includes(searchTerm)) {
             // Fade-in and scale-up for matching thumbnails
@@ -3462,22 +4821,14 @@ function getImportedSettings(exportedSettings) {
 
 function remapImportedSceneSettings(importedSettings, folderIdMap) {
     const remappedSettings = normalizeSettings(importedSettings);
-
-    for (const scene of assignableScenes) {
-        remappedSettings.sceneFolders[scene] = uniqueStringList(remappedSettings.sceneFolders[scene])
-            .map(folderKey => {
-                if (folderKey === homeSceneKey) {
-                    return homeSceneKey;
-                }
-                return folderIdMap[folderKey] || null;
-            })
-            .filter(Boolean);
-    }
-
-    if (!validScenes.includes(remappedSettings.activeScene)) {
-        remappedSettings.activeScene = sceneAll;
-    }
-
+    remappedSettings.sceneFolders = {
+        work: uniqueStringList(remappedSettings.sceneFolders?.work)
+            .map(folderKey => folderKey === '__home__' ? '__home__' : folderIdMap[folderKey])
+            .filter(Boolean),
+        life: uniqueStringList(remappedSettings.sceneFolders?.life)
+            .map(folderKey => folderKey === '__home__' ? '__home__' : folderIdMap[folderKey])
+            .filter(Boolean),
+    };
     return remappedSettings;
 }
 
@@ -3485,6 +4836,8 @@ function importFromOhMySwipeDeck(swipeDeckData) {
     // Clear previous settings and import new data
     chrome.storage.local.clear().then(() => {
         const importedSettings = getImportedSettings(swipeDeckData.settings);
+        const hasImportedSceneSync = !!swipeDeckData.sceneSync;
+        const importedSceneSync = normalizeSceneSync(swipeDeckData.sceneSync);
         const importedDials = Array.isArray(swipeDeckData.dials) ? swipeDeckData.dials : [];
         const importedFolders = Array.isArray(swipeDeckData.folders) ? swipeDeckData.folders : [];
         const importedBookmarks = Array.isArray(swipeDeckData.bookmarks) ? swipeDeckData.bookmarks : [];
@@ -3540,12 +4893,24 @@ function importFromOhMySwipeDeck(swipeDeckData) {
                 ...dialPromises,
                 ...bookmarkPromises,
                 chrome.storage.local.set({ settings: remappedSettings }),
+                chrome.storage.sync
+                    ? chrome.storage.sync.set({ [sceneSyncStorageKey]: importedSceneSync })
+                    : Promise.resolve(),
             ]).then(() => {
                 settings = remappedSettings;
+                sceneSync = importedSceneSync;
+                sceneLocal = normalizeSceneLocal({ activeScene: remappedSettings.activeScene });
+                chrome.storage.local.set({ [sceneLocalStorageKey]: sceneLocal });
                 hideModals();
-                // Refresh page
-                processRefresh();
-                chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
+                const finishImport = () => {
+                    processRefresh();
+                    chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
+                };
+                if (hasImportedSceneSync) {
+                    finishImport();
+                } else {
+                    migrateLegacySceneSettings().then(finishImport);
+                }
             }).catch(err => {
                 console.log(err);
                 importExportStatus.innerText = i18n('importErrorBookmarksDials');
@@ -3912,6 +5277,80 @@ if (systemThemeQuery?.addEventListener) {
     systemThemeQuery.addListener(handleSystemThemeChange);
 }
 
+async function loadInitialSettings() {
+    const [localResult, syncResult] = await Promise.all([
+        chrome.storage.local.get(['settings', sceneLocalStorageKey]),
+        chrome.storage.sync
+            ? chrome.storage.sync.get([sceneSyncStorageKey, legacySceneSyncStorageKey]).catch(error => {
+                console.warn('Unable to load synced scene settings:', error);
+                return {};
+            })
+            : Promise.resolve({}),
+    ]);
+
+    settings = normalizeSettings(localResult.settings || cloneDefaultSettings());
+    sceneLocal = normalizeSceneLocal(localResult[sceneLocalStorageKey] || { activeScene: settings.activeScene });
+    sceneSync = normalizeSceneSync(syncResult[sceneSyncStorageKey] || syncResult[legacySceneSyncStorageKey]);
+    normalizeSceneSettings();
+    if (!syncResult[sceneSyncStorageKey] && syncResult[legacySceneSyncStorageKey]) {
+        await saveSceneSync();
+    }
+}
+
+async function migrateLegacySceneSettings() {
+    const children = await chrome.bookmarks.getChildren(swipeDeckId);
+    const foldersForMigration = getSortedDeckFolders(children);
+    const rootHomeBookmarks = children.filter(bookmark => bookmark.url);
+    let changed = false;
+
+    for (const sceneId of ['work', 'life']) {
+        const legacyKeys = uniqueStringList(settings.sceneFolders?.[sceneId]);
+        if (!legacyKeys.length) continue;
+
+        let scene = getSceneById(sceneId);
+        if (!scene) {
+            scene = normalizeSceneConfig({
+                id: sceneId,
+                name: getLegacySceneName(sceneId),
+                defaultVisibility: 'hide',
+                modules: { ...defaultSceneModules },
+                rules: [],
+            }, sceneId);
+            sceneSync.scenes.push(scene);
+            changed = true;
+        }
+
+        const addMigratedRule = rule => {
+            const normalizedRule = normalizeSceneRuleEntry(rule);
+            const exists = scene.rules.some(existing =>
+                existing.action === normalizedRule.action
+                && existing.field === normalizedRule.field
+                && existing.value === normalizedRule.value
+            );
+            if (!exists) {
+                scene.rules.push(normalizedRule);
+                changed = true;
+            }
+        };
+
+        for (const legacyKey of legacyKeys) {
+            if (legacyKey === '__home__') {
+                for (const bookmark of rootHomeBookmarks) {
+                    addMigratedRule(createSceneRule('show', 'bookmark.url', bookmark.url));
+                }
+                continue;
+            }
+
+            const matchingFolder = foldersForMigration.find(folder => folder.id === legacyKey);
+            addMigratedRule(createSceneRule('show', 'folder.title', matchingFolder?.title || legacyKey));
+        }
+    }
+
+    if (changed) {
+        await saveSceneSync();
+    }
+}
+
 function init() {
 
     document.querySelectorAll('[data-locale]').forEach(elem => {
@@ -3923,40 +5362,20 @@ function init() {
         elem.placeholder = chrome.i18n.getMessage(elem.dataset.localePlaceholder)
     })
 
-    // init what used to be background work"
-    // build a thumbnail cache of url:thumbUrl pairs
-    // todo: slow; lets get the current tab first
-    chrome.storage.local.get('settings').then(result => {
-        if (result) {
-            if (result.settings) {
-                settings = normalizeSettings(result.settings);
-            } else {
-                settings = cloneDefaultSettings();
-            }
-            /*
-            const entries = Object.entries(result);
-            for (let e of entries) {
-                //console.log(e);
-                // todo: filter folder ids
-                if (e[0] !== "settings" && e[1].thumbnails) {
-                    let index = e[1].thumbIndex;
-                    cache[e[0]] = [e[1].thumbnails[index], e[1].bgColor];
-                }
-            }
-            */
-        }
-
-        getSwipeDeckId().then(() => {
+    loadInitialSettings()
+        .then(() => getSwipeDeckId())
+        .then(() => migrateLegacySceneSettings())
+        .then(() => {
             if (settings.rememberFolder && settings.currentFolder) {
                 currentFolder = settings.currentFolder;
             } else {
                 currentFolder = null;
             }
             applySettings().then(() => buildDialPages(swipeDeckId, currentFolder));
-        }, error => {
+        })
+        .catch(error => {
             console.log(error);
         });
-    });
 
 
 

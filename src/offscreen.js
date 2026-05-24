@@ -2,6 +2,18 @@ chrome.runtime.onMessage.addListener(handleMessages);
 
 const imageRatio = 1.54;
 let newTabAudioContext = null;
+const defaultNewTabSoundType = 'open-zen';
+const newTabSoundFiles = {
+    'open-zen': 'audio/new-tab-candidates/newtab-open-zen.wav',
+    'open-rise': 'audio/new-tab-candidates/newtab-open-rise.wav',
+    'soft-bloom': 'audio/new-tab-candidates/newtab-soft-bloom.wav',
+    'soft-pearl-drop': 'audio/new-tab-candidates/newtab-soft-pearl-drop.wav',
+    'soft-quiet-resolve': 'audio/new-tab-candidates/newtab-soft-quiet-resolve.wav',
+    'open-drop': 'audio/new-tab-candidates/newtab-open-drop.wav',
+    'open-whisper': 'audio/new-tab-candidates/newtab-open-whisper.wav',
+    'soft-luna-bell': 'audio/new-tab-candidates/newtab-soft-luna-bell.wav',
+};
+const newTabAudioBufferCache = new Map();
 
 function offscreenCanvasShim(w=1, h=1) {
     try {
@@ -246,7 +258,45 @@ function playSkateSound(audioContext, now) {
     }
 }
 
-async function playNewTabSound(soundType = 'soda') {
+function getNewTabSoundFile(soundType) {
+    return newTabSoundFiles[soundType] || newTabSoundFiles[defaultNewTabSoundType];
+}
+
+async function getNewTabAudioBuffer(audioContext, soundType) {
+    const soundFile = getNewTabSoundFile(soundType);
+    const cachedBuffer = newTabAudioBufferCache.get(soundFile);
+    if (cachedBuffer) {
+        return cachedBuffer;
+    }
+
+    const soundUrl = chrome.runtime.getURL(soundFile);
+    const response = await fetch(soundUrl);
+    if (!response.ok) {
+        throw new Error(`Unable to load new tab sound: ${soundFile}`);
+    }
+
+    const audioData = await response.arrayBuffer();
+    const audioBuffer = await audioContext.decodeAudioData(audioData);
+    newTabAudioBufferCache.set(soundFile, audioBuffer);
+    return audioBuffer;
+}
+
+function playAudioBuffer(audioContext, audioBuffer, startTime) {
+    const source = audioContext.createBufferSource();
+    const gain = audioContext.createGain();
+
+    source.buffer = audioBuffer;
+    gain.gain.setValueAtTime(1, startTime);
+    source.connect(gain);
+    gain.connect(audioContext.destination);
+    source.start(startTime);
+    source.onended = () => {
+        source.disconnect();
+        gain.disconnect();
+    };
+}
+
+async function playNewTabSound(soundType = defaultNewTabSoundType) {
     const audioContext = getNewTabAudioContext();
     if (!audioContext) return;
 
@@ -254,19 +304,8 @@ async function playNewTabSound(soundType = 'soda') {
         await audioContext.resume();
     }
 
-    const now = audioContext.currentTime + 0.006;
-    switch (soundType) {
-        case 'ollie':
-            playOllieSound(audioContext, now);
-            break;
-        case 'skate':
-            playSkateSound(audioContext, now);
-            break;
-        case 'soda':
-        default:
-            playSodaSound(audioContext, now);
-            break;
-    }
+    const audioBuffer = await getNewTabAudioBuffer(audioContext, soundType);
+    playAudioBuffer(audioContext, audioBuffer, audioContext.currentTime + 0.006);
 }
 
 

@@ -6,22 +6,22 @@
         wallpaper: true,
         wallpaperSrc: 'img/bg.jpg',
         themeMode: 'system',
-        backgroundColor: '#0d0f0f',
-        textColor: '#f4f1e8',
+        backgroundColor: '#090a0d',
+        textColor: '#f3f5f7',
     };
     const palettes = {
         dark: {
-            backgroundColor: '#0d0f0f',
-            textColor: '#f4f1e8',
+            backgroundColor: '#090a0d',
+            textColor: '#f3f5f7',
         },
         light: {
-            backgroundColor: '#f4efe6',
-            textColor: '#17201b',
+            backgroundColor: '#f4f6f8',
+            textColor: '#171b21',
         },
     };
     const themeDefaultColors = {
-        backgroundColor: new Set(Object.values(palettes).map(palette => palette.backgroundColor)),
-        textColor: new Set(Object.values(palettes).map(palette => palette.textColor)),
+        backgroundColor: new Set([...Object.values(palettes).map(palette => palette.backgroundColor), '#0d0f0f', '#f4efe6']),
+        textColor: new Set([...Object.values(palettes).map(palette => palette.textColor), '#f4f1e8', '#17201b']),
     };
     const root = document.documentElement;
     const systemThemeQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
@@ -87,6 +87,9 @@
         root.classList.toggle('themeLight', resolvedTheme === 'light');
         root.classList.toggle('themeDark', resolvedTheme === 'dark');
         root.dataset.theme = resolvedTheme;
+        root.style.colorScheme = resolvedTheme;
+        root.style.backgroundColor = backgroundColor;
+        root.style.setProperty('--surface-0', backgroundColor);
         root.style.setProperty('--color', textColor);
 
         clearInitialBackgroundClasses();

@@ -18,6 +18,7 @@
     "contextMenus",
     "favicon",
     "offscreen",
+    "search",
     "storage",
     "tabs",
     "unlimitedStorage"

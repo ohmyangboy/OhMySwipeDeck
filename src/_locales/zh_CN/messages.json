@@ -314,6 +314,135 @@
     "message": "此场景还没有文件夹"
   },
   "sceneEmptyMessage": {
-    "message": "在设置中把文件夹加入此场景，或切换到全部查看所有文件夹。"
+    "message": "调整当前场景规则，或切换到全部查看所有内容。"
+  },
+  "resetWallpaper": {
+    "message": "恢复默认壁纸"
+  },
+  "smartHomeSettings": {
+    "message": "智能主页"
+  },
+  "homeBookmarks": {
+    "message": "主页书签"
+  },
+  "smartHomeSearch": {
+    "message": "网络搜索"
+  },
+  "smartHomeRecent": {
+    "message": "最近打开的标签"
+  },
+  "recentRules": {
+    "message": "最近标签规则"
+  },
+  "includePatterns": {
+    "message": "包含规则"
+  },
+  "excludePatterns": {
+    "message": "排除规则"
+  },
+  "enableRecentPages": {
+    "message": "启用最近标签"
+  },
+  "recentUnavailable": {
+    "message": "此浏览器无法读取当前标签。"
+  },
+  "recentEmpty": {
+    "message": "没有匹配的打开标签。"
+  },
+  "searchUnavailable": {
+    "message": "无法使用浏览器默认搜索。"
+  },
+  "sceneFocus": {
+    "message": "专注"
+  },
+  "sceneDaily": {
+    "message": "日常"
+  },
+  "sceneRules": {
+    "message": "场景规则"
+  },
+  "defaultVisibility": {
+    "message": "默认显示方式"
+  },
+  "optionShowByDefault": {
+    "message": "默认显示"
+  },
+  "optionHideByDefault": {
+    "message": "默认隐藏"
+  },
+  "addScene": {
+    "message": "新增场景"
+  },
+  "duplicateScene": {
+    "message": "复制"
+  },
+  "deleteScene": {
+    "message": "删除场景"
+  },
+  "addRule": {
+    "message": "新增规则"
+  },
+  "removeRule": {
+    "message": "删除规则"
+  },
+  "ruleActionShow": {
+    "message": "显示"
+  },
+  "ruleActionHide": {
+    "message": "隐藏"
+  },
+  "ruleFieldFolderTitle": {
+    "message": "文件夹名称"
+  },
+  "ruleFieldFolderPath": {
+    "message": "文件夹路径"
+  },
+  "ruleFieldBookmarkTitle": {
+    "message": "书签标题"
+  },
+  "ruleFieldBookmarkUrl": {
+    "message": "书签地址"
+  },
+  "ruleFieldBookmarkDomain": {
+    "message": "书签域名"
+  },
+  "ruleFieldTabTitle": {
+    "message": "标签标题"
+  },
+  "ruleFieldTabUrl": {
+    "message": "标签地址"
+  },
+  "ruleFieldTabDomain": {
+    "message": "标签域名"
+  },
+  "ruleValue": {
+    "message": "关键词"
+  },
+  "rulePreview": {
+    "message": "预览"
+  },
+  "ruleVisible": {
+    "message": "显示"
+  },
+  "ruleHidden": {
+    "message": "隐藏"
+  },
+  "ruleDefault": {
+    "message": "默认"
+  },
+  "selectSceneForRule": {
+    "message": "请先选择一个具体场景。"
+  },
+  "ruleAdded": {
+    "message": "规则已添加。"
+  },
+  "hideSimilarFolder": {
+    "message": "在当前场景隐藏类似文件夹"
+  },
+  "showOnlySimilarFolder": {
+    "message": "只在当前场景显示类似文件夹"
+  },
+  "hideSimilarUrl": {
+    "message": "隐藏类似网址"
   }
 }

@@ -65,13 +65,14 @@
 .sidenav button {
     padding: .6em;
     width: 100%;
-    background-color: #3e5b3b;
-    color: #f6ffe8;
+    background-color: color-mix(in srgb, var(--accent) 32%, var(--surface-2));
+    color: var(--color);
     border: none;
+    border-radius: 7px;
 }
 
 .sidenav button:hover {
-    background-color: #507447;
+    background-color: color-mix(in srgb, var(--accent) 42%, var(--surface-2));
 }
 
 .sidenav .default {
@@ -92,22 +93,24 @@
 
 .sidenav #preview.defaultWallpaperPreview {
     background:
-        linear-gradient(rgba(244, 241, 232, 0.026) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(244, 241, 232, 0.02) 1px, transparent 1px),
-        linear-gradient(135deg, rgba(199, 168, 121, 0.16) 0%, rgba(199, 168, 121, 0.02) 28%, transparent 48%),
-        linear-gradient(215deg, rgba(115, 217, 199, 0.14) 0%, rgba(115, 217, 199, 0.02) 34%, transparent 58%),
-        linear-gradient(180deg, #171917 0%, #0f1110 48%, #080909 100%);
-    background-size: 24px 24px, 24px 24px, 100% 100%, 100% 100%, 100% 100%;
+        linear-gradient(var(--background-dim-overlay), var(--background-dim-overlay)),
+        linear-gradient(rgba(243, 245, 247, 0.024) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(243, 245, 247, 0.018) 1px, transparent 1px),
+        linear-gradient(132deg, rgba(143, 215, 255, 0.12), rgba(143, 215, 255, 0.02) 26%, transparent 42%),
+        linear-gradient(224deg, rgba(216, 177, 112, 0.1), rgba(216, 177, 112, 0.018) 34%, transparent 56%),
+        linear-gradient(180deg, #151922 0%, #0d1015 52%, #08090d 100%);
+    background-size: 100% 100%, 24px 24px, 24px 24px, 100% 100%, 100% 100%, 100% 100%;
 }
 
 body.themeLight .sidenav #preview.defaultWallpaperPreview {
     background:
-        linear-gradient(rgba(23, 32, 27, 0.035) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(23, 32, 27, 0.026) 1px, transparent 1px),
-        linear-gradient(140deg, rgba(199, 168, 121, 0.22) 0%, rgba(199, 168, 121, 0.06) 28%, transparent 52%),
-        linear-gradient(220deg, rgba(115, 217, 199, 0.055) 0%, rgba(115, 217, 199, 0.018) 28%, transparent 48%),
-        linear-gradient(180deg, #fff9ee 0%, #f3eadc 50%, #e2d8c9 100%);
-    background-size: 24px 24px, 24px 24px, 100% 100%, 100% 100%, 100% 100%;
+        linear-gradient(var(--background-dim-overlay), var(--background-dim-overlay)),
+        linear-gradient(rgba(23, 27, 33, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(23, 27, 33, 0.022) 1px, transparent 1px),
+        linear-gradient(138deg, rgba(32, 118, 168, 0.1), rgba(32, 118, 168, 0.025) 30%, transparent 52%),
+        linear-gradient(222deg, rgba(155, 111, 47, 0.1), rgba(155, 111, 47, 0.02) 34%, transparent 56%),
+        linear-gradient(180deg, #fbfcfd 0%, #eef2f5 56%, #e1e7ed 100%);
+    background-size: 100% 100%, 24px 24px, 24px 24px, 100% 100%, 100% 100%, 100% 100%;
 }
 
 .sidenav #previewContainer {
@@ -126,10 +129,39 @@ body.themeLight .sidenav #preview.defaultWallpaperPreview {
     opacity: 0;
     cursor: pointer;
     border-radius: 8px;
+    z-index: 1;
 }
 
 .sidenav #previewOverlay:hover {
     opacity: 0.5;
+}
+
+.sidenav .wallpaperResetButton {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid color-mix(in srgb, var(--color) 22%, transparent);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--surface-0) 74%, #000 26%);
+    color: var(--color);
+    font-size: 22px;
+    line-height: 1;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.24);
+}
+
+.sidenav .wallpaperResetButton:hover {
+    background: color-mix(in srgb, var(--surface-0) 60%, #000 40%);
+    border-color: color-mix(in srgb, var(--color) 36%, transparent);
+}
+
+.sidenav .wallpaperResetButton[hidden] {
+    display: none;
 }
 
 .sidenav #switchesContainer {
@@ -279,54 +311,139 @@ body.themeLight .sidenav #preview.defaultWallpaperPreview {
         0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
-.sceneFolderPanel {
+.sceneRulePanel {
     width: 100%;
-    padding: 0.35em 0 0.5em;
+    padding: 0.35em 0 0.75em;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
-.sceneFolderHeader,
-.sceneFolderAssignment {
+.scenePillList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.scenePill,
+.sceneActionButton,
+.sceneIconButton {
+    border: 1px solid var(--line-soft);
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--surface-glass) 76%, transparent);
+    color: var(--color);
+    min-height: 30px;
+    padding: 0 10px;
+}
+
+.scenePill.active {
+    border-color: color-mix(in srgb, var(--accent) 44%, var(--line-bright));
+    background: color-mix(in srgb, var(--accent) 16%, var(--surface-glass-strong));
+}
+
+.sceneRuleMeta {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 54px 54px;
-    align-items: center;
-    gap: 8px;
+    grid-template-columns: minmax(0, 1fr) minmax(112px, 0.75fr);
+    gap: 7px;
+}
+
+.sceneRuleMeta .sceneActionButton {
     width: 100%;
 }
 
-.sceneFolderHeader {
+.sceneModuleGrid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 42px;
+    align-items: center;
+    gap: 4px 8px;
+    border-top: 1px solid color-mix(in srgb, var(--line-soft) 62%, transparent);
+    padding-top: 8px;
+}
+
+.sceneModuleLabel,
+.scenePanelTitle,
+.sceneRuleNotice {
     color: var(--muted);
     font-size: 0.82em;
 }
 
-.sceneFolderHeader span:not(:first-child),
-.sceneFolderAssignment label {
-    justify-self: center;
+.sceneToggle {
+    justify-self: end;
 }
 
-.sceneFolderAssignments {
+.sceneToggle input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+}
+
+.sceneRulesList {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    max-height: 190px;
+    gap: 6px;
+}
+
+.sceneRuleRow {
+    display: grid;
+    grid-template-columns: 76px minmax(98px, 0.9fr) minmax(0, 1fr) 30px;
+    gap: 6px;
+    align-items: center;
+}
+
+.sceneRuleValue {
+    min-width: 0;
+}
+
+.sceneIconButton {
+    width: 30px;
+    min-width: 30px;
+    padding: 0;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.scenePreviewList {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 220px;
     overflow-y: auto;
     padding-right: 2px;
 }
 
-.sceneFolderAssignment {
-    min-height: 32px;
-    border-top: 1px solid color-mix(in srgb, var(--line-soft) 62%, transparent);
+.scenePreviewRow {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr) 42px;
+    gap: 6px;
+    align-items: center;
+    min-height: 30px;
+    padding: 4px 6px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--color) 5%, transparent);
 }
 
-.sceneFolderName {
+.scenePreviewRow.hidden {
+    opacity: 0.62;
+}
+
+.scenePreviewType,
+.scenePreviewStatus,
+.scenePreviewReason {
+    color: var(--muted);
+    font-size: 0.75em;
+}
+
+.scenePreviewName {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.sceneFolderAssignment input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    accent-color: var(--accent);
+.scenePreviewReason {
+    grid-column: 2 / 4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .settingsLink {
