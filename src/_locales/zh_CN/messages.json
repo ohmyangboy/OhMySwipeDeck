@@ -279,5 +279,41 @@
   },
   "genericErrorTryAgain": {
     "message": "出了点问题，请重试。"
+  },
+  "newTabSound": {
+    "message": "新标签页声音"
+  },
+  "newTabSoundType": {
+    "message": "声音类型"
+  },
+  "optionSoundOllie": {
+    "message": "Ollie（滑板起跳）"
+  },
+  "optionSoundSkate": {
+    "message": "Skate（滑板滑行）"
+  },
+  "optionSoundSoda": {
+    "message": "Soda（汽水开罐）"
+  },
+  "currentScene": {
+    "message": "当前场景"
+  },
+  "sceneAll": {
+    "message": "全部"
+  },
+  "sceneWork": {
+    "message": "工作"
+  },
+  "sceneLife": {
+    "message": "生活"
+  },
+  "sceneFolders": {
+    "message": "场景文件夹"
+  },
+  "sceneEmptyTitle": {
+    "message": "此场景还没有文件夹"
+  },
+  "sceneEmptyMessage": {
+    "message": "在设置中把文件夹加入此场景，或切换到全部查看所有文件夹。"
   }
 }

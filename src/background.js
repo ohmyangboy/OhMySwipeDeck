@@ -23,6 +23,7 @@ chrome.contextMenus.onClicked.addListener(handleContextMenuClick);
 
 chrome.runtime.onMessage.addListener(handleMessages);
 chrome.runtime.onInstalled.addListener(handleInstalled);
+chrome.tabs.onCreated.addListener(handleNewTabCreated);
 
 // Add tab listeners for Opera and browsers that don't support chrome_url_overrides
 if (isOpera()) { chrome.tabs.onCreated.addListener(handleTabCreated); }
@@ -57,6 +58,45 @@ async function handleMessages(message) {
 			console.warn(`Unexpected message type received: '${message.type}'.`);
 			break;
 	}
+}
+
+async function handleNewTabCreated(tab) {
+	if (!tab || !tab.active || typeof tab.windowId !== 'number') {
+		return;
+	}
+
+	try {
+		const windowInfo = await chrome.windows.get(tab.windowId);
+		if (!windowInfo || windowInfo.type !== 'normal' || !windowInfo.focused) {
+			return;
+		}
+
+		const result = await chrome.storage.local.get('settings');
+		if (result.settings && result.settings.newTabSound === false) {
+			return;
+		}
+
+		await playNewTabSound(result.settings?.newTabSoundType);
+	} catch (error) {
+		console.warn('Unable to play new tab sound:', error);
+	}
+}
+
+async function playNewTabSound(soundType = 'soda') {
+	if (!chrome.offscreen || !chrome.offscreen.createDocument) {
+		return;
+	}
+
+	const offscreenReady = await setupOffscreenDocument('offscreen.html');
+	if (!offscreenReady) {
+		return;
+	}
+
+	await chrome.runtime.sendMessage({
+		target: 'offscreen',
+		type: 'playNewTabSound',
+		data: { soundType }
+	});
 }
 
 async function handleGetThumbs(data, batchSize = 50) {
@@ -502,7 +542,10 @@ async function getThumbnails(url, id, parentId, options = {quickRefresh: false, 
     }
 
 	// cant parse images from dom in service worker: delegate to offscreen document
-	await setupOffscreenDocument('offscreen.html');
+	const offscreenReady = await setupOffscreenDocument('offscreen.html');
+	if (!offscreenReady) {
+		return;
+	}
 
 	chrome.runtime.sendMessage({
 		target: 'offscreen',
@@ -586,28 +629,59 @@ function isOpera() {
 // offscreen document setup
 let creating; // A global promise to avoid concurrency issues
 async function setupOffscreenDocument(path) {
+  if (!chrome.offscreen || !chrome.offscreen.createDocument) {
+    return false;
+  }
+
   // Check all windows controlled by the service worker to see if one
   // of them is the offscreen document with the given path
   const offscreenUrl = chrome.runtime.getURL(path);
-  const existingContexts = await chrome.runtime.getContexts({
-    contextTypes: ['OFFSCREEN_DOCUMENT'],
-    documentUrls: [offscreenUrl]
-  });
-
-  if (existingContexts.length > 0) {
-    return;
+  if (await hasOffscreenDocument(offscreenUrl)) {
+    return true;
   }
 
   // create offscreen document
   if (creating) {
     await creating;
   } else {
+    const reasons = getOffscreenReasons();
     creating = chrome.offscreen.createDocument({
       url: path,
-      reasons: [chrome.offscreen.Reason.DOM_PARSER],
-      justification: 'parse document for image tags to use as thumbnail'
+      reasons,
+      justification: 'parse document for image tags and play the optional new tab sound'
     });
-    await creating;
-    creating = null;
+    try {
+      await creating;
+    } finally {
+      creating = null;
+    }
   }
+
+  return true;
+}
+
+async function hasOffscreenDocument(offscreenUrl) {
+  if (chrome.runtime.getContexts) {
+    const existingContexts = await chrome.runtime.getContexts({
+      contextTypes: ['OFFSCREEN_DOCUMENT'],
+      documentUrls: [offscreenUrl]
+    });
+
+    return existingContexts.length > 0;
+  }
+
+  if (typeof self !== 'undefined' && self.clients && self.clients.matchAll) {
+    const matchedClients = await self.clients.matchAll();
+    return matchedClients.some(client => client.url === offscreenUrl);
+  }
+
+  return false;
+}
+
+function getOffscreenReasons() {
+  const offscreenReason = chrome.offscreen.Reason || {};
+  return [
+    offscreenReason.DOM_PARSER || 'DOM_PARSER',
+    offscreenReason.AUDIO_PLAYBACK || 'AUDIO_PLAYBACK'
+  ];
 }

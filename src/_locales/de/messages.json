@@ -279,5 +279,41 @@
   },
   "genericErrorTryAgain": {
     "message": "Something went wrong. Please try again."
+  },
+  "newTabSound": {
+    "message": "New Tab Sound"
+  },
+  "newTabSoundType": {
+    "message": "Sound Type"
+  },
+  "optionSoundOllie": {
+    "message": "Ollie (skateboard pop)"
+  },
+  "optionSoundSkate": {
+    "message": "Skate (rolling board)"
+  },
+  "optionSoundSoda": {
+    "message": "Soda (can opening)"
+  },
+  "currentScene": {
+    "message": "Current Scene"
+  },
+  "sceneAll": {
+    "message": "All"
+  },
+  "sceneWork": {
+    "message": "Work"
+  },
+  "sceneLife": {
+    "message": "Life"
+  },
+  "sceneFolders": {
+    "message": "Scene Folders"
+  },
+  "sceneEmptyTitle": {
+    "message": "No folders in this scene"
+  },
+  "sceneEmptyMessage": {
+    "message": "Add a folder to this scene from Settings, or switch to All to see every folder."
   }
 }

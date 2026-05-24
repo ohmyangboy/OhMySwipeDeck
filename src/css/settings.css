@@ -90,6 +90,26 @@
     border-radius: 8px;
 }
 
+.sidenav #preview.defaultWallpaperPreview {
+    background:
+        linear-gradient(rgba(244, 241, 232, 0.026) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(244, 241, 232, 0.02) 1px, transparent 1px),
+        linear-gradient(135deg, rgba(199, 168, 121, 0.16) 0%, rgba(199, 168, 121, 0.02) 28%, transparent 48%),
+        linear-gradient(215deg, rgba(115, 217, 199, 0.14) 0%, rgba(115, 217, 199, 0.02) 34%, transparent 58%),
+        linear-gradient(180deg, #171917 0%, #0f1110 48%, #080909 100%);
+    background-size: 24px 24px, 24px 24px, 100% 100%, 100% 100%, 100% 100%;
+}
+
+body.themeLight .sidenav #preview.defaultWallpaperPreview {
+    background:
+        linear-gradient(rgba(23, 32, 27, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(23, 32, 27, 0.026) 1px, transparent 1px),
+        linear-gradient(140deg, rgba(199, 168, 121, 0.22) 0%, rgba(199, 168, 121, 0.06) 28%, transparent 52%),
+        linear-gradient(220deg, rgba(115, 217, 199, 0.055) 0%, rgba(115, 217, 199, 0.018) 28%, transparent 48%),
+        linear-gradient(180deg, #fff9ee 0%, #f3eadc 50%, #e2d8c9 100%);
+    background-size: 24px 24px, 24px 24px, 100% 100%, 100% 100%, 100% 100%;
+}
+
 .sidenav #previewContainer {
     opacity: 0;
     transform-origin: 0 0;
@@ -257,6 +277,56 @@
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.12),
         0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.sceneFolderPanel {
+    width: 100%;
+    padding: 0.35em 0 0.5em;
+}
+
+.sceneFolderHeader,
+.sceneFolderAssignment {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 54px 54px;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.sceneFolderHeader {
+    color: var(--muted);
+    font-size: 0.82em;
+}
+
+.sceneFolderHeader span:not(:first-child),
+.sceneFolderAssignment label {
+    justify-self: center;
+}
+
+.sceneFolderAssignments {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 190px;
+    overflow-y: auto;
+    padding-right: 2px;
+}
+
+.sceneFolderAssignment {
+    min-height: 32px;
+    border-top: 1px solid color-mix(in srgb, var(--line-soft) 62%, transparent);
+}
+
+.sceneFolderName {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sceneFolderAssignment input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
 }
 
 .settingsLink {

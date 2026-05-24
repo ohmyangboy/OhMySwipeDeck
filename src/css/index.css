@@ -41,6 +41,7 @@
     --folder-control-radius: 19px;
 }
 
+:root.themeLight,
 body.themeLight {
     --color: #17201b;
     --surface-0: #f4efe6;
@@ -58,10 +59,10 @@ body.themeLight {
     --folder-tab-radius: 21px;
     --folder-tab-padding-y: 8px;
     --folder-tab-padding-x: 16px;
-    --folder-tab-active-height: 44px;
-    --folder-tab-active-radius: 22px;
-    --folder-tab-active-padding-y: 8px;
-    --folder-tab-active-padding-x: 18px;
+    --folder-tab-active-height: 46px;
+    --folder-tab-active-radius: 23px;
+    --folder-tab-active-padding-y: 9px;
+    --folder-tab-active-padding-x: 20px;
 }
 
 /* Apply a smooth transition for the background image */
@@ -137,6 +138,7 @@ body {
     user-select: none;
 }
 
+:root.gradientBackground body,
 .gradientBackground {
     position: relative;
     overflow: hidden;
@@ -149,6 +151,7 @@ body {
     background-size: 56px 56px, 56px 56px, 100% 100%, 100% 100%, 100% 100%;
 }
 
+:root.gradientBackground body::before,
 .gradientBackground::before {
     content: '';
     position: absolute;
@@ -165,6 +168,7 @@ body {
     z-index: -1;
 }
 
+:root.gradientBackground body::after,
 .gradientBackground::after {
     content: '';
     position: absolute;
@@ -178,16 +182,18 @@ body {
     z-index: -1;
 }
 
+:root.themeLight.gradientBackground body,
 body.themeLight.gradientBackground {
     background:
         linear-gradient(rgba(23, 32, 27, 0.035) 1px, transparent 1px),
         linear-gradient(90deg, rgba(23, 32, 27, 0.026) 1px, transparent 1px),
-        linear-gradient(140deg, rgba(199, 168, 121, 0.3) 0%, rgba(199, 168, 121, 0.08) 28%, transparent 52%),
-        linear-gradient(220deg, rgba(115, 217, 199, 0.2) 0%, rgba(115, 217, 199, 0.05) 34%, transparent 60%),
+        linear-gradient(140deg, rgba(199, 168, 121, 0.22) 0%, rgba(199, 168, 121, 0.06) 28%, transparent 52%),
+        linear-gradient(220deg, rgba(115, 217, 199, 0.055) 0%, rgba(115, 217, 199, 0.018) 28%, transparent 48%),
         linear-gradient(180deg, #fff9ee 0%, #f3eadc 50%, #e2d8c9 100%);
     background-size: 56px 56px, 56px 56px, 100% 100%, 100% 100%, 100% 100%;
 }
 
+:root.themeLight.gradientBackground body::before,
 body.themeLight.gradientBackground::before {
     background:
         linear-gradient(rgba(23, 32, 27, 0.03) 1px, transparent 1px),
@@ -198,12 +204,22 @@ body.themeLight.gradientBackground::before {
     opacity: 0.8;
 }
 
+:root.themeLight.gradientBackground body::after,
 body.themeLight.gradientBackground::after {
     background:
         repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.18) 0, rgba(255, 255, 255, 0.18) 1px, transparent 1px, transparent 4px),
         linear-gradient(180deg, rgba(255, 255, 255, 0.5), transparent 32%);
     mix-blend-mode: soft-light;
     opacity: 0.58;
+}
+
+:root.initialCustomWallpaper body {
+    background: var(--initial-wallpaper-src) no-repeat top center fixed;
+    background-size: cover;
+}
+
+:root.initialSolidBackground body {
+    background: var(--initial-background-color);
 }
 
 h1 {
@@ -460,13 +476,28 @@ h1 {
 }
 
 .folderRailScrubbing .activeFolder:not(.scrubPreviewFolder) {
-    opacity: 0.72;
-    color: color-mix(in srgb, var(--color) 78%, transparent);
+    opacity: 0.5;
+    color: color-mix(in srgb, var(--color) 66%, transparent);
 }
 
 .folderRailScrubbing .activeFolder:not(.scrubPreviewFolder)::before,
 .folderRailScrubbing .activeFolder:not(.scrubPreviewFolder)::after {
-    opacity: 0.72;
+    opacity: 0.44;
+}
+
+.folderRailScrubbing .scrubPreviewFolder {
+    transform: translateY(-1px) scale(1.035);
+    border-color: rgba(255, 255, 255, 0.62);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.72),
+        inset 0 -2px 0 rgba(255, 255, 255, 0.3),
+        inset 0 -26px 34px rgba(255, 255, 255, 0.13),
+        0 0 0 2px color-mix(in srgb, var(--accent-2) 30%, transparent),
+        0 18px 44px rgba(0, 0, 0, 0.26);
+}
+
+.folderRailScrubbing .activeFolder.scrubPreviewFolder {
+    transform: none;
 }
 
 @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
@@ -654,11 +685,10 @@ body.themeLight .scrubPreviewFolder {
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.9),
         inset 0 -1px 0 rgba(160, 116, 52, 0.12),
+        inset 0 0 0 2px rgba(255, 255, 255, 0.42),
         inset 0 -20px 30px rgba(177, 124, 48, 0.055),
         0 1px 0 rgba(255, 255, 255, 0.78),
-        0 0 0 3px rgba(255, 255, 255, 0.42),
-        0 0 0 5px rgba(200, 151, 80, 0.16),
-        0 14px 30px rgba(172, 118, 42, 0.14);
+        0 12px 26px rgba(172, 118, 42, 0.13);
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.58);
 }
 
@@ -674,30 +704,15 @@ body.themeLight .scrubPreviewFolder::before {
         inset 0 -18px 26px rgba(172, 113, 32, 0.055);
 }
 
-body.themeLight .activeFolder .folderTitleText::after,
-body.themeLight .scrubPreviewFolder .folderTitleText::after {
-    content: '';
-    position: absolute;
-    left: 50%;
-    bottom: -8px;
-    width: 18px;
-    height: 3px;
-    border-radius: 999px;
-    transform: translateX(-50%);
-    background: linear-gradient(90deg, rgba(184, 124, 41, 0), rgba(184, 124, 41, 0.88), rgba(184, 124, 41, 0));
-    box-shadow:
-        0 0 10px rgba(190, 126, 38, 0.34),
-        0 0 1px rgba(121, 78, 25, 0.4);
-}
-
 body.themeLight.folderRailScrubbing .scrubPreviewFolder {
+    border-color: rgba(167, 117, 45, 0.3);
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.92),
         inset 0 -1px 0 rgba(160, 116, 52, 0.13),
+        inset 0 0 0 2px rgba(255, 255, 255, 0.46),
         inset 0 -20px 30px rgba(177, 124, 48, 0.06),
+        0 0 0 2px rgba(40, 125, 115, 0.18),
         0 1px 0 rgba(255, 255, 255, 0.8),
-        0 0 0 3px rgba(255, 255, 255, 0.46),
-        0 0 0 7px rgba(200, 151, 80, 0.2),
         0 16px 34px rgba(172, 118, 42, 0.18);
 }
 
@@ -1163,7 +1178,7 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     right: 0;
     background: var(--surface-glass-strong);
     border-left: 1px solid var(--line-soft);
-    box-shadow: -24px 0 70px rgba(0, 0, 0, 0.28);
+    box-shadow: none;
     -webkit-backdrop-filter: blur(20px) saturate(140%);
     backdrop-filter: blur(20px) saturate(140%);
     overflow-x: hidden; /* Disable horizontal scroll */
@@ -1302,7 +1317,8 @@ body.themeLight .folders-content {
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.72),
         inset 0 -1px 0 rgba(183, 158, 116, 0.055),
-        0 12px 34px rgba(172, 138, 91, 0.06);
+        0 1px 0 rgba(255, 255, 255, 0.42),
+        0 8px 24px rgba(194, 170, 132, 0.035);
 }
 
 body.themeLight .folders-content::after {
@@ -1323,7 +1339,8 @@ body.themeLight .folders-drag-active .folders-content {
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.84),
         inset 0 -1px 0 rgba(183, 158, 116, 0.075),
-        0 16px 38px rgba(172, 138, 91, 0.075);
+        0 1px 0 rgba(255, 255, 255, 0.5),
+        0 10px 26px rgba(194, 170, 132, 0.045);
 }
 
 .folderRailDragging .folders-content {
@@ -1363,8 +1380,6 @@ body.themeLight .folders-drag-active .folders-content {
     transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
 }
 
-.folderRailScrubbing #addFolderButton,
-.folderRailDragging #addFolderButton,
 .folders-drag-active #addFolderButton,
 #addFolderButton:hover {
     background: color-mix(in srgb, var(--color) 8%, transparent);
@@ -1377,6 +1392,27 @@ body.themeLight .folders-drag-active .folders-content {
 
 #addFolderButton:hover #addFolderIcon {
     opacity: 1;
+}
+
+.folderRailScrubbing #addFolderButton,
+.folderRailScrubbing #addFolderButton:hover,
+.folderRailScrubbing #addFolderButton:active,
+.folderRailDragging #addFolderButton,
+.folderRailDragging #addFolderButton:hover,
+.folderRailDragging #addFolderButton:active {
+    pointer-events: none;
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+}
+
+.folderRailScrubbing #addFolderButton #addFolderIcon,
+.folderRailScrubbing #addFolderButton:hover #addFolderIcon,
+.folderRailScrubbing #addFolderButton:active #addFolderIcon,
+.folderRailDragging #addFolderButton #addFolderIcon,
+.folderRailDragging #addFolderButton:hover #addFolderIcon,
+.folderRailDragging #addFolderButton:active #addFolderIcon {
+    opacity: 0.7;
 }
 
 /* Header controls container */

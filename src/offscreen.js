@@ -1,6 +1,7 @@
 chrome.runtime.onMessage.addListener(handleMessages);
 
 const imageRatio = 1.54;
+let newTabAudioContext = null;
 
 function offscreenCanvasShim(w=1, h=1) {
     try {
@@ -15,7 +16,18 @@ function offscreenCanvasShim(w=1, h=1) {
 }
 
 async function handleMessages(message) {
-    if (message.target !== 'offscreen') {
+    if (!message || message.target !== 'offscreen') {
+        return;
+    }
+
+    if (message.type === 'playNewTabSound') {
+        playNewTabSound(message.data?.soundType).catch(err => {
+            console.log(err);
+        });
+        return;
+    }
+
+    if (!message.data) {
         return;
     }
 
@@ -76,6 +88,185 @@ async function handleMessages(message) {
     //return title; //todo: why did i do this?
 
       //chrome.runtime.sendMessage(images);
+}
+
+function getNewTabAudioContext() {
+    const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextConstructor) return null;
+
+    if (!newTabAudioContext || newTabAudioContext.state === 'closed') {
+        newTabAudioContext = new AudioContextConstructor();
+    }
+
+    return newTabAudioContext;
+}
+
+function createNoiseBuffer(audioContext, duration) {
+    const frameCount = Math.floor(audioContext.sampleRate * duration);
+    const buffer = audioContext.createBuffer(1, frameCount, audioContext.sampleRate);
+    const output = buffer.getChannelData(0);
+
+    for (let i = 0; i < frameCount; i++) {
+        output[i] = Math.random() * 2 - 1;
+    }
+
+    return buffer;
+}
+
+function connectNoiseBurst(audioContext, destination, startTime, duration, peakGain, filterFrequency, filterQ) {
+    const noise = audioContext.createBufferSource();
+    const filter = audioContext.createBiquadFilter();
+    const gain = audioContext.createGain();
+
+    noise.buffer = createNoiseBuffer(audioContext, duration);
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(filterFrequency, startTime);
+    filter.Q.setValueAtTime(filterQ, startTime);
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.linearRampToValueAtTime(peakGain, startTime + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(destination);
+    noise.start(startTime);
+    noise.stop(startTime + duration);
+}
+
+function createMasterGain(audioContext, startTime, volume, duration) {
+    const master = audioContext.createGain();
+    master.gain.setValueAtTime(volume, startTime);
+    master.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+    master.connect(audioContext.destination);
+
+    setTimeout(() => {
+        master.disconnect();
+    }, Math.ceil((duration + 0.18) * 1000));
+
+    return master;
+}
+
+function connectTone(audioContext, destination, startTime, duration, options) {
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+
+    oscillator.type = options.type || 'sine';
+    oscillator.frequency.setValueAtTime(options.startFrequency, startTime);
+    if (options.endFrequency) {
+        oscillator.frequency.exponentialRampToValueAtTime(options.endFrequency, startTime + duration);
+    }
+
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.linearRampToValueAtTime(options.peakGain, startTime + (options.attack || 0.008));
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+    oscillator.connect(gain);
+    gain.connect(destination);
+    oscillator.start(startTime);
+    oscillator.stop(startTime + duration);
+}
+
+function playSodaSound(audioContext, now) {
+    const master = createMasterGain(audioContext, now, 0.62, 0.72);
+
+    connectTone(audioContext, master, now, 0.055, {
+        type: 'square',
+        startFrequency: 2100,
+        endFrequency: 960,
+        peakGain: 0.16,
+        attack: 0.003,
+    });
+    connectTone(audioContext, master, now + 0.018, 0.12, {
+        type: 'triangle',
+        startFrequency: 260,
+        endFrequency: 88,
+        peakGain: 0.26,
+        attack: 0.006,
+    });
+
+    connectNoiseBurst(audioContext, master, now + 0.006, 0.075, 0.22, 3300, 3.8);
+    connectNoiseBurst(audioContext, master, now + 0.045, 0.5, 0.14, 7600, 0.65);
+    connectNoiseBurst(audioContext, master, now + 0.08, 0.38, 0.08, 11800, 0.9);
+
+    for (let i = 0; i < 10; i++) {
+        const bubbleTime = now + 0.15 + i * 0.043 + Math.random() * 0.015;
+        connectTone(audioContext, master, bubbleTime, 0.038, {
+            type: 'sine',
+            startFrequency: 1150 + Math.random() * 1500,
+            endFrequency: 620 + Math.random() * 620,
+            peakGain: 0.022,
+            attack: 0.004,
+        });
+    }
+}
+
+function playOllieSound(audioContext, now) {
+    const master = createMasterGain(audioContext, now, 0.78, 0.46);
+
+    connectTone(audioContext, master, now, 0.14, {
+        type: 'triangle',
+        startFrequency: 92,
+        endFrequency: 47,
+        peakGain: 0.32,
+        attack: 0.004,
+    });
+    connectNoiseBurst(audioContext, master, now + 0.002, 0.085, 0.34, 920, 1.9);
+    connectNoiseBurst(audioContext, master, now + 0.018, 0.16, 0.12, 2400, 2.4);
+
+    connectTone(audioContext, master, now + 0.105, 0.085, {
+        type: 'triangle',
+        startFrequency: 138,
+        endFrequency: 64,
+        peakGain: 0.18,
+        attack: 0.004,
+    });
+    connectNoiseBurst(audioContext, master, now + 0.105, 0.13, 0.16, 1300, 1.35);
+
+    for (let i = 0; i < 4; i++) {
+        connectNoiseBurst(audioContext, master, now + 0.2 + i * 0.045, 0.05, 0.045, 3400 + i * 650, 2.2);
+    }
+}
+
+function playSkateSound(audioContext, now) {
+    const master = createMasterGain(audioContext, now, 0.46, 0.92);
+
+    connectNoiseBurst(audioContext, master, now, 0.82, 0.14, 560, 0.45);
+    connectNoiseBurst(audioContext, master, now + 0.02, 0.78, 0.09, 2600, 0.75);
+
+    for (let i = 0; i < 9; i++) {
+        const bumpTime = now + i * 0.085 + Math.random() * 0.016;
+        connectTone(audioContext, master, bumpTime, 0.055, {
+            type: 'triangle',
+            startFrequency: 145 + Math.random() * 46,
+            endFrequency: 90 + Math.random() * 28,
+            peakGain: 0.035,
+            attack: 0.004,
+        });
+        connectNoiseBurst(audioContext, master, bumpTime + 0.004, 0.045, 0.038, 1450 + Math.random() * 900, 1.2);
+    }
+}
+
+async function playNewTabSound(soundType = 'soda') {
+    const audioContext = getNewTabAudioContext();
+    if (!audioContext) return;
+
+    if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+    }
+
+    const now = audioContext.currentTime + 0.006;
+    switch (soundType) {
+        case 'ollie':
+            playOllieSound(audioContext, now);
+            break;
+        case 'skate':
+            playSkateSound(audioContext, now);
+            break;
+        case 'soda':
+        default:
+            playSodaSound(audioContext, now);
+            break;
+    }
 }
 
 

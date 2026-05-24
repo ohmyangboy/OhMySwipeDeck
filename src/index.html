@@ -9,6 +9,7 @@
     <meta charset="utf-8">
     <meta content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width"
           name="viewport">
+    <script src="js/boot-theme.js"></script>
     <link href="css/flexCarousel.min.css" rel="stylesheet" type="text/css">
     <link href="css/coloris.min.css" rel="stylesheet" type="text/css">
     <link href="css/index.css" rel="stylesheet" type="text/css">
@@ -301,7 +302,7 @@
             <div class='column'>
             </div>
             <div class='column controls' style="position: relative;">
-                <img id="preview" src="#">
+                <img id="preview" src="#" alt="">
                 <div id="previewOverlay"></div>
                 <input accept="image/*" class="settingsCtl" id="file" type="file">
                 <!--<label for="file" class="settingsCtl" data-locale="browse">Browse...</label>-->
@@ -338,7 +339,7 @@
                     <select class="settingsCtl" id="dialRatio" name="dialRatio">
                         <option value="square" data-locale="optionSquare">Square</option>
                         <option value="wide" data-locale="optionWide">Wide</option>
-                        <option value="flow" data-locale="optionFlow">Flow</option>
+                        <option selected value="flow" data-locale="optionFlow">Flow</option>
                     </select>
                 </div>
             </div>
@@ -394,9 +395,52 @@
                 <div class='column controls'>
                     <select class="settingsCtl" id="defaultOpen" name="defaultOpen">
                         <option value="current" data-locale="optionOpenCurrent">Current tab</option>
-                        <option value="newTab" data-locale="optionOpenNewTab">New tab</option>
+                        <option selected value="newTab" data-locale="optionOpenNewTab">New tab</option>
                     </select>
                 </div>
+            </div>
+            <div class='row'>
+                <div class='column'>
+                    <label data-locale="newTabSound">New Tab Sound</label>
+                </div>
+                <div class='column controls'>
+                    <label class="switch">
+                        <input checked class="settingsCtl" id="newTabSound" type="checkbox">
+                        <span class="slider round settingsCtl"></span>
+                    </label>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='column'>
+                    <label data-locale="newTabSoundType">Sound Type</label>
+                </div>
+                <div class='column controls'>
+                    <select class="settingsCtl" id="newTabSoundType" name="newTabSoundType">
+                        <option value="ollie" data-locale="optionSoundOllie">Ollie (skateboard pop)</option>
+                        <option value="skate" data-locale="optionSoundSkate">Skate (rolling board)</option>
+                        <option selected value="soda" data-locale="optionSoundSoda">Soda (can opening)</option>
+                    </select>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='column'>
+                    <label data-locale="currentScene">Current Scene</label>
+                </div>
+                <div class='column controls'>
+                    <select class="settingsCtl" id="activeScene" name="activeScene">
+                        <option selected value="all" data-locale="sceneAll">All</option>
+                        <option value="work" data-locale="sceneWork">Work</option>
+                        <option value="life" data-locale="sceneLife">Life</option>
+                    </select>
+                </div>
+            </div>
+            <div class="sceneFolderPanel">
+                <div class="sceneFolderHeader">
+                    <span data-locale="sceneFolders">Scene Folders</span>
+                    <span data-locale="sceneWork">Work</span>
+                    <span data-locale="sceneLife">Life</span>
+                </div>
+                <div id="sceneFolderAssignments" class="sceneFolderAssignments"></div>
             </div>
             <div class='row' style="display:none">
                 <div class='column'>
@@ -426,7 +470,7 @@
                 </div>
                 <div class='column controls'>
                     <label class="switch">
-                        <input class="settingsCtl" id="showClock" type="checkbox">
+                        <input checked class="settingsCtl" id="showClock" type="checkbox">
                         <span class="slider round settingsCtl"></span>
                     </label>
                 </div>
