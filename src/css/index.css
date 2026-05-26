@@ -1416,21 +1416,6 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     overflow: hidden;
 }
 
-body.themeLight.folderRailScrubbing #foldersContainer::after,
-body.themeLight.folderRailDragging #foldersContainer::after,
-body.themeLight #foldersContainer.folders-drag-active::after {
-    content: '';
-    position: absolute;
-    left: 28px;
-    right: 28px;
-    bottom: 18px;
-    height: 1px;
-    pointer-events: none;
-    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 28%, transparent), rgba(255, 255, 255, 0.42), color-mix(in srgb, var(--accent-2) 18%, transparent), transparent);
-    box-shadow: none;
-    opacity: 0.52;
-}
-
 /* when the folders header is empty add padding to tileContainer so deck items appear visually centered  */
 body:not(:has(.folderTitle)) #tileContainer {
     padding-bottom: 82px; /* counters foldersContainer height */

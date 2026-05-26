@@ -4398,10 +4398,13 @@ showSearchBtnInput.oninput = function (e) {
 
 reader.onload = function (e) {
     resizeBackground(e.target.result).then(imagedata => {
+        wallPaperEnabled.checked = true;
+        settings.wallpaper = true;
         imgPreview.classList.remove('defaultWallpaperPreview');
         imgPreview.dataset.defaultWallpaper = 'false';
         imgPreview.setAttribute('src', imagedata);
         imgPreview.style.display = 'block';
+        resetWallpaperBtn.hidden = false;
         // dynamically set text color based on background
         /*
         getAverageRGB(imagedata).then(rgb => {
@@ -4410,7 +4413,9 @@ reader.onload = function (e) {
             document.documentElement.style.setProperty('--color', textColor);
         });
          */
-        saveSettings()
+        syncWallpaperPreviewLayout();
+        saveSettings();
+        imgInput.value = '';
     })
 };
 
