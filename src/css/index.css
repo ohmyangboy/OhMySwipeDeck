@@ -210,9 +210,13 @@ body.themeLight.gradientBackground::after {
 }
 
 :root.initialCustomWallpaper body {
-    background:
+    background-color: var(--surface-0);
+    background-image:
         linear-gradient(var(--background-dim-overlay), var(--background-dim-overlay)),
-        var(--initial-wallpaper-src) no-repeat top center fixed;
+        var(--initial-wallpaper-src);
+    background-repeat: no-repeat;
+    background-position: top center;
+    background-attachment: fixed;
     background-size: cover;
 }
 

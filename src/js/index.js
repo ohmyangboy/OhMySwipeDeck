@@ -182,6 +182,8 @@ const smartHomeRecentLimit = 8;
 const defaultFocusHidePatterns = ['游戏', '视频', '吉他', '娱乐'];
 const sceneRuleActions = ['show', 'hide'];
 const sceneRuleMatches = ['contains', 'notContains'];
+const wallpaperMaxDimension = 2560;
+const wallpaperMaxPixels = 3600000;
 const sceneRuleFields = [
     'folder.title',
     'folder.path',
@@ -482,6 +484,11 @@ function isDefaultWallpaperSrc(src) {
 
 function getStoredWallpaperSrc(src) {
     return isDefaultWallpaperSrc(src) ? defaults.wallpaperSrc : src;
+}
+
+function getCssUrlValue(src) {
+    const escapedSrc = String(src || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    return `url("${escapedSrc}")`;
 }
 
 function clearInitialPaintClasses() {
@@ -3600,17 +3607,19 @@ function readURL(input) {
 }
 
 function getWallpaperResizeTarget(imgWidth, imgHeight) {
-    const pixelRatio = Math.max(1, Math.min(window.devicePixelRatio || 1, 3));
+    const pixelRatio = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
     const viewportWidth = Math.max(window.innerWidth || 0, screen.width || 0);
     const viewportHeight = Math.max(window.innerHeight || 0, screen.height || 0);
     const targetWidth = Math.ceil(viewportWidth * pixelRatio);
     const targetHeight = Math.ceil(viewportHeight * pixelRatio);
-    const scale = Math.min(1, Math.max(targetWidth / imgWidth, targetHeight / imgHeight));
+    const coverScale = Math.max(targetWidth / imgWidth, targetHeight / imgHeight);
+    const dimensionScale = wallpaperMaxDimension / Math.max(imgWidth, imgHeight);
+    const pixelScale = Math.sqrt(wallpaperMaxPixels / (imgWidth * imgHeight));
+    const scale = Math.min(1, coverScale, dimensionScale, pixelScale);
 
     return {
-        width: Math.round(imgWidth * scale),
-        height: Math.round(imgHeight * scale),
-        shouldResize: scale < 1,
+        width: Math.max(1, Math.round(imgWidth * scale)),
+        height: Math.max(1, Math.round(imgHeight * scale)),
     };
 }
 
@@ -3619,27 +3628,27 @@ function resizeBackground(dataURI) {
         let img = new Image();
         img.onload = function () {
             const target = getWallpaperResizeTarget(this.width, this.height);
+            let canvas = document.createElement('canvas');
+            let ctx = canvas.getContext('2d', { willReadFrequently: true });
+            const useJpeg = typeof chrome !== 'undefined' && Boolean(chrome.runtime?.getBrowserInfo);
 
-            if (target.shouldResize) {
-                let canvas = document.createElement('canvas');
-                let ctx = canvas.getContext('2d', { willReadFrequently: true });
-                ctx.imageSmoothingEnabled = true;
-                ctx.imageSmoothingQuality = 'high';
+            canvas.width = target.width;
+            canvas.height = target.height;
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
 
-                canvas.width = target.width;
-                canvas.height = target.height;
-                ctx.drawImage(this, 0, 0, target.width, target.height);
+            if (useJpeg) {
+                ctx.fillStyle = getThemeAwareSettingColor('backgroundColor') || defaults.backgroundColor;
+                ctx.fillRect(0, 0, target.width, target.height);
+            }
 
-                // todo: remove this whenever firefox supports webp. in meantime we fallback to jpg for speed
-                if (chrome.runtime.getBrowserInfo) {
-                    const newDataURI = canvas.toDataURL('image/jpeg', 0.94);
-                    resolve(newDataURI);
-                } else {
-                    const newDataURI = canvas.toDataURL('image/webp', 0.95);
-                    resolve(newDataURI);
-                }
+            ctx.drawImage(this, 0, 0, target.width, target.height);
+
+            // todo: remove this whenever firefox supports webp. in meantime we fallback to jpg for speed
+            if (useJpeg) {
+                resolve(canvas.toDataURL('image/jpeg', 0.9));
             } else {
-                resolve(dataURI);
+                resolve(canvas.toDataURL('image/webp', 0.88));
             }
         };
         img.onerror = reject;
@@ -3739,18 +3748,33 @@ function applySettings() {
             if (isDefaultWallpaperSrc(settings.wallpaperSrc)) {
                 // Remove any existing background styles and add the animated gradient class
                 document.body.style.background = '';
+                document.body.style.backgroundColor = '';
+                document.body.style.backgroundImage = '';
+                document.body.style.backgroundRepeat = '';
+                document.body.style.backgroundPosition = '';
+                document.body.style.backgroundAttachment = '';
                 document.body.style.backgroundSize = '';
                 document.body.classList.add('gradientBackground');
             } else {
                 // Remove the gradient class and apply custom background
                 document.body.classList.remove('gradientBackground');
-                document.body.style.background = `linear-gradient(var(--background-dim-overlay), var(--background-dim-overlay)), url("${settings.wallpaperSrc}") no-repeat top center fixed`;
+                document.body.style.background = '';
+                document.body.style.backgroundColor = backgroundColor;
+                document.body.style.backgroundImage = `linear-gradient(var(--background-dim-overlay), var(--background-dim-overlay)), ${getCssUrlValue(settings.wallpaperSrc)}`;
+                document.body.style.backgroundRepeat = 'no-repeat';
+                document.body.style.backgroundPosition = 'top center';
+                document.body.style.backgroundAttachment = 'fixed';
                 document.body.style.backgroundSize = 'cover';
             }
         } else {
             // Remove the gradient class and apply solid background color
             document.body.classList.remove('gradientBackground');
             document.body.style.background = `linear-gradient(var(--background-dim-overlay), var(--background-dim-overlay)), ${backgroundColor}`;
+            document.body.style.backgroundColor = backgroundColor;
+            document.body.style.backgroundImage = '';
+            document.body.style.backgroundRepeat = '';
+            document.body.style.backgroundPosition = '';
+            document.body.style.backgroundAttachment = '';
             document.body.style.backgroundSize = '';
         }
 
@@ -4019,6 +4043,9 @@ function saveSettings() {
              */
 
             //tabMessagePort.postMessage({updateSettings: true});
+        })
+        .catch(error => {
+            console.warn('Unable to save settings:', error);
         });
 }
 
@@ -4415,6 +4442,9 @@ reader.onload = function (e) {
          */
         syncWallpaperPreviewLayout();
         saveSettings();
+        imgInput.value = '';
+    }).catch(error => {
+        console.warn('Unable to load wallpaper:', error);
         imgInput.value = '';
     })
 };
