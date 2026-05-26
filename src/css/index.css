@@ -235,8 +235,10 @@ body.themeLight.gradientBackground::after {
     background-position: top center;
     background-attachment: fixed;
     background-size: cover;
-    animation: wallpaper-soft-appear 420ms ease-out both;
-    will-change: opacity, filter, transform;
+    animation: wallpaper-soft-appear 320ms cubic-bezier(0.2, 0, 0.16, 1) both;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+    will-change: opacity, transform;
 }
 
 :root.initialSolidBackground body {
@@ -248,13 +250,11 @@ body.themeLight.gradientBackground::after {
 @keyframes wallpaper-soft-appear {
     from {
         opacity: 0;
-        filter: blur(7px);
-        transform: scale(1.012);
+        transform: translateZ(0) scale(1.004);
     }
     to {
         opacity: 1;
-        filter: blur(0);
-        transform: scale(1);
+        transform: translateZ(0) scale(1);
     }
 }
 
@@ -262,7 +262,6 @@ body.themeLight.gradientBackground::after {
     :root.initialCustomWallpaper body::before,
     :root.customWallpaper body::before {
         animation: none;
-        filter: none;
         transform: none;
     }
 }
