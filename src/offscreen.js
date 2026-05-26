@@ -7,10 +7,6 @@ const newTabSoundFiles = {
     'open-zen': 'audio/new-tab-candidates/newtab-open-zen.wav',
     'open-rise': 'audio/new-tab-candidates/newtab-open-rise.wav',
     'soft-bloom': 'audio/new-tab-candidates/newtab-soft-bloom.wav',
-    'soft-pearl-drop': 'audio/new-tab-candidates/newtab-soft-pearl-drop.wav',
-    'soft-quiet-resolve': 'audio/new-tab-candidates/newtab-soft-quiet-resolve.wav',
-    'open-drop': 'audio/new-tab-candidates/newtab-open-drop.wav',
-    'open-whisper': 'audio/new-tab-candidates/newtab-open-whisper.wav',
     'soft-luna-bell': 'audio/new-tab-candidates/newtab-soft-luna-bell.wav',
 };
 const newTabAudioBufferCache = new Map();

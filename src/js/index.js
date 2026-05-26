@@ -203,24 +203,17 @@ const defaultSceneModules = {
 const soundOpenZen = 'open-zen';
 const soundOpenRise = 'open-rise';
 const soundSoftBloom = 'soft-bloom';
-const soundSoftPearlDrop = 'soft-pearl-drop';
-const soundSoftQuietResolve = 'soft-quiet-resolve';
-const soundOpenDrop = 'open-drop';
-const soundOpenWhisper = 'open-whisper';
 const soundSoftLunaBell = 'soft-luna-bell';
 const validNewTabSoundTypes = [
     soundOpenZen,
     soundOpenRise,
     soundSoftBloom,
-    soundSoftPearlDrop,
-    soundSoftQuietResolve,
-    soundOpenDrop,
-    soundOpenWhisper,
     soundSoftLunaBell,
 ];
 const emptySceneContainerId = 'sceneEmpty';
 let isToastVisible = false;
 const folderRailSettleDelay = 115;
+const folderRailExpandClass = 'folderRailExpanding';
 const folderSwitchEnterClass = 'folderSwitchEntering';
 const folderSwitchExitClass = 'folderSwitchLeaving';
 const folderSwitchEnterDuration = 260;
@@ -1591,7 +1584,7 @@ async function buildDialPages(swipeDeckId, currentFolderId) {
             folderLink(folder.title, folder.id);
         }
         requestAnimationFrame(() => {
-            updateFolderRailLayout();
+            updateFolderRailLayout({ animate: true });
             centerFolderInRail(currentFolder, 'auto');
         });
     }
@@ -1653,7 +1646,7 @@ async function buildFolderPages(swipeDeckId) {
             folderLink(folder.title, folder.id);
         }
         requestAnimationFrame(() => {
-            updateFolderRailLayout();
+            updateFolderRailLayout({ animate: true });
             centerFolderInRail(currentFolder, 'auto');
         });
     }
@@ -2018,7 +2011,16 @@ function updateFolderRailEdgeState() {
     document.body.classList.toggle('folderRailAtEnd', foldersRail.scrollLeft >= maxScroll - 1);
 }
 
-function updateFolderRailLayout() {
+function playFolderRailExpandAnimation() {
+    if (!foldersRail || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    foldersRail.classList.remove(folderRailExpandClass);
+    requestAnimationFrame(() => foldersRail.classList.add(folderRailExpandClass));
+}
+
+function updateFolderRailLayout({ animate = false } = {}) {
+    if (animate) {
+        playFolderRailExpandAnimation();
+    }
     requestAnimationFrame(updateFolderRailEdgeState);
 }
 
@@ -5498,6 +5500,11 @@ function init() {
     foldersContainerEl.addEventListener('dragover', folderContainerDragOver);
     window.addEventListener('wheel', handleFolderRailWheel, { passive: false });
     foldersRail.addEventListener('scroll', () => requestAnimationFrame(updateFolderRailEdgeState), { passive: true });
+    foldersRail.addEventListener('animationend', event => {
+        if (event.animationName === 'folder-rail-expand') {
+            foldersRail.classList.remove(folderRailExpandClass);
+        }
+    });
 
     sortable = new Sortable(foldersContainer, {
         animation: 150,
