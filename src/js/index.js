@@ -491,10 +491,17 @@ function getCssUrlValue(src) {
     return `url("${escapedSrc}")`;
 }
 
-function clearInitialPaintClasses() {
+function setWallpaperCssVar(src) {
+    document.documentElement.style.setProperty('--wallpaper-src', getCssUrlValue(src));
+}
+
+function clearInitialPaintClasses({ preserveWallpaperSrc = false } = {}) {
     document.documentElement.dataset.initialPaintFinalized = 'true';
     document.documentElement.classList.remove('gradientBackground', 'initialCustomWallpaper', 'initialSolidBackground');
-    document.documentElement.style.removeProperty('--initial-wallpaper-src');
+    if (!preserveWallpaperSrc) {
+        document.documentElement.classList.remove('customWallpaper');
+        document.documentElement.style.removeProperty('--wallpaper-src');
+    }
     document.documentElement.style.removeProperty('--initial-background-color');
     document.documentElement.style.removeProperty('--surface-0');
     document.documentElement.style.removeProperty('background-color');
@@ -3747,6 +3754,7 @@ function applySettings() {
             // perf hack for default gradient bg image. user selected images are data URIs
             if (isDefaultWallpaperSrc(settings.wallpaperSrc)) {
                 // Remove any existing background styles and add the animated gradient class
+                document.documentElement.classList.remove('customWallpaper');
                 document.body.style.background = '';
                 document.body.style.backgroundColor = '';
                 document.body.style.backgroundImage = '';
@@ -3758,16 +3766,19 @@ function applySettings() {
             } else {
                 // Remove the gradient class and apply custom background
                 document.body.classList.remove('gradientBackground');
+                setWallpaperCssVar(settings.wallpaperSrc);
+                document.documentElement.classList.add('customWallpaper');
                 document.body.style.background = '';
-                document.body.style.backgroundColor = backgroundColor;
-                document.body.style.backgroundImage = `linear-gradient(var(--background-dim-overlay), var(--background-dim-overlay)), ${getCssUrlValue(settings.wallpaperSrc)}`;
-                document.body.style.backgroundRepeat = 'no-repeat';
-                document.body.style.backgroundPosition = 'top center';
-                document.body.style.backgroundAttachment = 'fixed';
-                document.body.style.backgroundSize = 'cover';
+                document.body.style.backgroundColor = '';
+                document.body.style.backgroundImage = '';
+                document.body.style.backgroundRepeat = '';
+                document.body.style.backgroundPosition = '';
+                document.body.style.backgroundAttachment = '';
+                document.body.style.backgroundSize = '';
             }
         } else {
             // Remove the gradient class and apply solid background color
+            document.documentElement.classList.remove('customWallpaper');
             document.body.classList.remove('gradientBackground');
             document.body.style.background = `linear-gradient(var(--background-dim-overlay), var(--background-dim-overlay)), ${backgroundColor}`;
             document.body.style.backgroundColor = backgroundColor;
@@ -3778,7 +3789,9 @@ function applySettings() {
             document.body.style.backgroundSize = '';
         }
 
-        clearInitialPaintClasses();
+        clearInitialPaintClasses({
+            preserveWallpaperSrc: settings.wallpaper && settings.wallpaperSrc && !isDefaultWallpaperSrc(settings.wallpaperSrc),
+        });
         syncInitialPaintSnapshot(backgroundColor, textColor);
 
         if (textColor) {

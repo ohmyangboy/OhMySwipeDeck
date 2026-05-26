@@ -122,6 +122,10 @@ html, body {
     flex-direction: column;
 }
 
+html {
+    background: var(--surface-0);
+}
+
 body {
     background: var(--surface-0);
     background-size: cover;
@@ -209,21 +213,58 @@ body.themeLight.gradientBackground::after {
     opacity: 0.54;
 }
 
-:root.initialCustomWallpaper body {
+:root.initialCustomWallpaper body,
+:root.customWallpaper body {
+    position: relative;
+    overflow: hidden;
+    background: transparent;
+}
+
+:root.initialCustomWallpaper body::before,
+:root.customWallpaper body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
     background-color: var(--surface-0);
     background-image:
         linear-gradient(var(--background-dim-overlay), var(--background-dim-overlay)),
-        var(--initial-wallpaper-src);
+        var(--wallpaper-src);
     background-repeat: no-repeat;
     background-position: top center;
     background-attachment: fixed;
     background-size: cover;
+    animation: wallpaper-soft-appear 420ms ease-out both;
+    will-change: opacity, filter, transform;
 }
 
 :root.initialSolidBackground body {
     background:
         linear-gradient(var(--background-dim-overlay), var(--background-dim-overlay)),
         var(--initial-background-color);
+}
+
+@keyframes wallpaper-soft-appear {
+    from {
+        opacity: 0;
+        filter: blur(7px);
+        transform: scale(1.012);
+    }
+    to {
+        opacity: 1;
+        filter: blur(0);
+        transform: scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :root.initialCustomWallpaper body::before,
+    :root.customWallpaper body::before {
+        animation: none;
+        filter: none;
+        transform: none;
+    }
 }
 
 h1 {

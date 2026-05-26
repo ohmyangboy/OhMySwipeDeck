@@ -65,12 +65,12 @@
 
     function setWallpaperVar(src) {
         const escapedSrc = String(src).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-        root.style.setProperty('--initial-wallpaper-src', `url("${escapedSrc}")`);
+        root.style.setProperty('--wallpaper-src', `url("${escapedSrc}")`);
     }
 
     function clearInitialBackgroundClasses() {
-        root.classList.remove('gradientBackground', 'initialCustomWallpaper', 'initialSolidBackground');
-        root.style.removeProperty('--initial-wallpaper-src');
+        root.classList.remove('gradientBackground', 'initialCustomWallpaper', 'initialSolidBackground', 'customWallpaper');
+        root.style.removeProperty('--wallpaper-src');
         root.style.removeProperty('--initial-background-color');
     }
 
