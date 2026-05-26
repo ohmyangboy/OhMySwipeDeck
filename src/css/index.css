@@ -310,7 +310,7 @@ h1 {
     justify-content: center;
     align-items: flex-start;
     box-sizing: border-box;
-    padding-block: clamp(18px, 4vh, 52px) 24px;
+    padding-block: clamp(42px, 7.5vh, 92px) 32px;
     transition: opacity 150ms ease-in;
     overflow-x: hidden;
     overflow-y: auto;
@@ -875,7 +875,7 @@ h1 {
 .flowDial #tileContainer {
     justify-content: center;
     align-items: flex-start;
-    padding-top: clamp(52px, 11vh, 124px);
+    padding-top: clamp(68px, 12.5vh, 140px);
     padding-inline: clamp(18px, 5vw, 72px);
 }
 
@@ -1894,7 +1894,7 @@ body.flowDial .smartHomeContainer {
 body.flowDial #tileContainer:has(.smartHomeContainer) {
     align-items: flex-start;
     justify-content: center;
-    padding: clamp(20px, 4vh, 52px) clamp(14px, 4vw, 28px) 24px;
+    padding: clamp(42px, 7.5vh, 92px) clamp(14px, 4vw, 28px) 32px;
 }
 
 body.flowDial .smartHomeTileGrid .tile,
