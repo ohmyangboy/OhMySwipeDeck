@@ -81,7 +81,7 @@ async function handleNewTabCreated(tab) {
 			return;
 		}
 
-		await playNewTabSound(result.settings?.newTabSoundType);
+		await playNewTabSound(result.settings?.newTabSoundType, result.settings?.newTabSoundVolume);
 	} catch (error) {
 		console.warn('Unable to play new tab sound:', error);
 	}
@@ -124,7 +124,15 @@ async function handleRecentTabRemoved(tabId) {
 	}
 }
 
-async function playNewTabSound(soundType = 'open-zen') {
+function normalizeNewTabSoundVolume(value) {
+	const numericValue = Number(value);
+	if (!Number.isFinite(numericValue)) {
+		return 1;
+	}
+	return Math.min(1, Math.max(0, numericValue));
+}
+
+async function playNewTabSound(soundType = 'open-zen', volume = 1) {
 	if (!chrome.offscreen || !chrome.offscreen.createDocument) {
 		return;
 	}
@@ -137,7 +145,7 @@ async function playNewTabSound(soundType = 'open-zen') {
 	await chrome.runtime.sendMessage({
 		target: 'offscreen',
 		type: 'playNewTabSound',
-		data: { soundType }
+		data: { soundType, volume: normalizeNewTabSoundVolume(volume) }
 	});
 }
 

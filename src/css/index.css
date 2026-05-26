@@ -338,11 +338,36 @@ h1 {
     grid-row: 1 / span 3;
 }
 
-.smartHomeTitle {
+.smartHomeSectionHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
     margin: 0 0 10px;
+}
+
+.smartHomeTitle {
+    margin: 0;
     color: var(--muted);
     font-size: 0.86rem;
     font-weight: 500;
+}
+
+.smartHomeHistoryButton {
+    min-height: 28px;
+    padding: 0 10px;
+    border: 1px solid var(--line-soft);
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--surface-glass-strong) 70%, transparent);
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.76rem;
+}
+
+.smartHomeHistoryButton:hover {
+    border-color: var(--line-bright);
+    background: color-mix(in srgb, var(--color) 9%, var(--surface-glass-strong));
+    color: var(--color);
 }
 
 .smartHomeSearchForm,

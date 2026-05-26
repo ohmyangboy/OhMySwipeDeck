@@ -286,6 +286,9 @@
   "newTabSoundType": {
     "message": "声音类型"
   },
+  "newTabSoundVolume": {
+    "message": "音量大小"
+  },
   "optionSoundOllie": {
     "message": "Ollie（滑板起跳）"
   },
@@ -330,6 +333,9 @@
   },
   "smartHomeRecent": {
     "message": "最近打开的标签"
+  },
+  "openFullHistory": {
+    "message": "完整历史记录"
   },
   "recentRules": {
     "message": "最近标签规则"

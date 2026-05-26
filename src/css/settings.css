@@ -405,6 +405,28 @@ body.themeLight .sidenav #preview.defaultWallpaperPreview {
         0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
+.settingsRangeControl {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 42px;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.sidenav input[type="range"] {
+    width: 100%;
+    height: 24px;
+    margin: 0;
+    accent-color: var(--accent);
+}
+
+.settingsRangeControl output {
+    color: var(--muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
 .sceneRulePanel {
     width: 100%;
     margin: 8px 0 10px;

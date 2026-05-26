@@ -33,7 +33,7 @@ async function handleMessages(message) {
     }
 
     if (message.type === 'playNewTabSound') {
-        playNewTabSound(message.data?.soundType).catch(err => {
+        playNewTabSound(message.data?.soundType, message.data?.volume).catch(err => {
             console.log(err);
         });
         return;
@@ -262,6 +262,14 @@ function getNewTabSoundFile(soundType) {
     return newTabSoundFiles[soundType] || newTabSoundFiles[defaultNewTabSoundType];
 }
 
+function normalizeNewTabSoundVolume(value) {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) {
+        return 1;
+    }
+    return Math.min(1, Math.max(0, numericValue));
+}
+
 async function getNewTabAudioBuffer(audioContext, soundType) {
     const soundFile = getNewTabSoundFile(soundType);
     const cachedBuffer = newTabAudioBufferCache.get(soundFile);
@@ -281,12 +289,12 @@ async function getNewTabAudioBuffer(audioContext, soundType) {
     return audioBuffer;
 }
 
-function playAudioBuffer(audioContext, audioBuffer, startTime) {
+function playAudioBuffer(audioContext, audioBuffer, startTime, volume = 1) {
     const source = audioContext.createBufferSource();
     const gain = audioContext.createGain();
 
     source.buffer = audioBuffer;
-    gain.gain.setValueAtTime(1, startTime);
+    gain.gain.setValueAtTime(normalizeNewTabSoundVolume(volume), startTime);
     source.connect(gain);
     gain.connect(audioContext.destination);
     source.start(startTime);
@@ -296,7 +304,7 @@ function playAudioBuffer(audioContext, audioBuffer, startTime) {
     };
 }
 
-async function playNewTabSound(soundType = defaultNewTabSoundType) {
+async function playNewTabSound(soundType = defaultNewTabSoundType, volume = 1) {
     const audioContext = getNewTabAudioContext();
     if (!audioContext) return;
 
@@ -305,7 +313,7 @@ async function playNewTabSound(soundType = defaultNewTabSoundType) {
     }
 
     const audioBuffer = await getNewTabAudioBuffer(audioContext, soundType);
-    playAudioBuffer(audioContext, audioBuffer, audioContext.currentTime + 0.006);
+    playAudioBuffer(audioContext, audioBuffer, audioContext.currentTime + 0.006, volume);
 }
 
 

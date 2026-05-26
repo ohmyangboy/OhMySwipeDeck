@@ -104,6 +104,8 @@ const defaultSortInput = document.getElementById("defaultSort");
 const defaultOpenInput = document.getElementById("defaultOpen");
 const newTabSoundInput = document.getElementById("newTabSound");
 const newTabSoundTypeInput = document.getElementById("newTabSoundType");
+const newTabSoundVolumeInput = document.getElementById("newTabSoundVolume");
+const newTabSoundVolumeValue = document.getElementById("newTabSoundVolumeValue");
 const activeSceneInput = document.getElementById("activeScene");
 const sceneRuleSettings = document.getElementById("sceneRuleSettings");
 const importExportBtn = document.getElementById("importExportBtn");
@@ -272,6 +274,7 @@ let defaults = {
     defaultOpen: 'newTab',
     newTabSound: true,
     newTabSoundType: soundOpenZen,
+    newTabSoundVolume: 1,
     textColor: '#f3f5f7',
     dialSize: 'large',
     dialRatio: 'flow',
@@ -322,6 +325,7 @@ const i18nFallbackMessages = {
         homeBookmarks: 'Home Bookmarks',
         smartHomeSearch: 'Web Search',
         smartHomeRecent: 'Recently Opened Tabs',
+        openFullHistory: 'Full History',
         recentRules: 'Recent Tab Rules',
         includePatterns: 'Include patterns',
         excludePatterns: 'Exclude patterns',
@@ -329,6 +333,7 @@ const i18nFallbackMessages = {
         recentUnavailable: 'Open tabs are not available in this browser.',
         recentEmpty: 'No matching open tabs.',
         searchUnavailable: 'Default browser search is unavailable.',
+        newTabSoundVolume: 'Sound Volume',
         sceneFocus: 'Focus',
         sceneDaily: 'Daily',
         sceneRules: 'Scene Rules',
@@ -368,6 +373,7 @@ const i18nFallbackMessages = {
         homeBookmarks: '主页书签',
         smartHomeSearch: '网络搜索',
         smartHomeRecent: '最近打开的标签',
+        openFullHistory: '完整历史记录',
         recentRules: '最近标签规则',
         includePatterns: '包含规则',
         excludePatterns: '排除规则',
@@ -375,6 +381,7 @@ const i18nFallbackMessages = {
         recentUnavailable: '此浏览器无法读取当前标签。',
         recentEmpty: '没有匹配的打开标签。',
         searchUnavailable: '无法使用浏览器默认搜索。',
+        newTabSoundVolume: '音量大小',
         sceneFocus: '专注',
         sceneDaily: '日常',
         sceneRules: '场景规则',
@@ -575,6 +582,25 @@ function uniqueTrimmedStringList(value) {
         .filter(Boolean))];
 }
 
+function normalizeNewTabSoundVolume(value) {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) {
+        return 1;
+    }
+    return Math.min(1, Math.max(0, numericValue));
+}
+
+function getNewTabSoundVolumePercent() {
+    return Math.round(normalizeNewTabSoundVolume(settings.newTabSoundVolume) * 100);
+}
+
+function renderNewTabSoundVolumeValue() {
+    if (!newTabSoundVolumeValue) {
+        return;
+    }
+    newTabSoundVolumeValue.textContent = `${newTabSoundVolumeInput?.value || 0}%`;
+}
+
 function createSceneId(name = 'scene') {
     const slug = String(name || 'scene')
         .trim()
@@ -766,6 +792,7 @@ function normalizeSettings(nextSettings = {}) {
     normalized.newTabSoundType = validNewTabSoundTypes.includes(normalized.newTabSoundType)
         ? normalized.newTabSoundType
         : soundOpenZen;
+    normalized.newTabSoundVolume = normalizeNewTabSoundVolume(normalized.newTabSoundVolume);
     normalized.activeScene = typeof normalized.activeScene === 'string' && normalized.activeScene
         ? normalized.activeScene
         : sceneAll;
@@ -2520,10 +2547,14 @@ function createSmartHomeSection(titleText, className = '') {
     const section = document.createElement('section');
     section.className = `smartHomeSection ${className}`.trim();
 
+    const header = document.createElement('div');
+    header.className = 'smartHomeSectionHeader';
+
     const title = document.createElement('h2');
     title.className = 'smartHomeTitle';
     title.textContent = titleText;
-    section.appendChild(title);
+    header.appendChild(title);
+    section.appendChild(header);
 
     return section;
 }
@@ -2638,8 +2669,30 @@ function createRecentTabLink(item) {
     return link;
 }
 
+function getBrowserHistoryUrl() {
+    const userAgent = navigator.userAgent || '';
+    if (userAgent.includes('Firefox/')) return 'about:history';
+    if (userAgent.includes('Edg/')) return 'edge://history/all';
+    if (userAgent.includes('OPR/') || userAgent.includes('Opera/')) return 'opera://history';
+    return 'chrome://history';
+}
+
+function createOpenHistoryButton() {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'settingsCtl smartHomeHistoryButton';
+    button.textContent = i18n('openFullHistory');
+    button.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        chrome.tabs.create({ url: getBrowserHistoryUrl() });
+    });
+    return button;
+}
+
 async function renderRecentPagesSection(parent, scene) {
     const section = createSmartHomeSection(i18n('smartHomeRecent'), 'smartHomeRecentSection');
+    section.querySelector('.smartHomeSectionHeader')?.appendChild(createOpenHistoryButton());
     parent.appendChild(section);
 
     if (!chrome.tabs?.query) {
@@ -3907,6 +3960,10 @@ function applySettings() {
         newTabSoundTypeInput.value = validNewTabSoundTypes.includes(settings.newTabSoundType)
             ? settings.newTabSoundType
             : soundOpenZen;
+        if (newTabSoundVolumeInput) {
+            newTabSoundVolumeInput.value = String(getNewTabSoundVolumePercent());
+            renderNewTabSoundVolumeValue();
+        }
         renderActiveSceneOptions();
         activeSceneInput.value = getActiveScene();
         rememberFolderInput.checked = settings.rememberFolder;
@@ -3941,6 +3998,7 @@ function saveSettings() {
     settings.newTabSoundType = validNewTabSoundTypes.includes(newTabSoundTypeInput.value)
         ? newTabSoundTypeInput.value
         : soundOpenZen;
+    settings.newTabSoundVolume = normalizeNewTabSoundVolume(Number(newTabSoundVolumeInput?.value ?? 100) / 100);
     setActiveScene(activeSceneInput.value);
     settings.rememberFolder = rememberFolderInput.checked;
     settings.currentFolder = currentFolder || null;
@@ -4037,7 +4095,7 @@ window.addEventListener("mousedown", e => {
     if (e.target.closest && e.target.closest('.sceneRulePanel')) {
         return;
     }
-    if (e.target.type === 'text' || e.target.id === 'themeMode' || e.target.id === 'maxcols' || e.target.id === 'defaultSort' || e.target.id === 'defaultOpen' || e.target.id === 'newTabSoundType' || e.target.id === 'activeScene' || e.target.id === 'dialSize' || e.target.id === 'dialRatio') {
+    if (e.target.type === 'text' || e.target.type === 'range' || e.target.id === 'themeMode' || e.target.id === 'maxcols' || e.target.id === 'defaultSort' || e.target.id === 'defaultOpen' || e.target.id === 'newTabSoundType' || e.target.id === 'activeScene' || e.target.id === 'dialSize' || e.target.id === 'dialRatio') {
         return
     }
     if (e.target.className.baseVal === 'gear') {
@@ -4275,6 +4333,11 @@ newTabSoundInput.oninput = function (e) {
 }
 
 newTabSoundTypeInput.oninput = function (e) {
+    saveSettings()
+}
+
+newTabSoundVolumeInput.oninput = function (e) {
+    renderNewTabSoundVolumeValue();
     saveSettings()
 }
 
@@ -5386,12 +5449,12 @@ async function migrateLegacySceneSettings() {
 function init() {
 
     document.querySelectorAll('[data-locale]').forEach(elem => {
-        elem.textContent = chrome.i18n.getMessage(elem.dataset.locale);
+        elem.textContent = i18n(elem.dataset.locale);
     })
 
     // Handle placeholder translations separately
     document.querySelectorAll('[data-locale-placeholder]').forEach(elem => {
-        elem.placeholder = chrome.i18n.getMessage(elem.dataset.localePlaceholder)
+        elem.placeholder = i18n(elem.dataset.localePlaceholder)
     })
 
     loadInitialSettings()

@@ -286,6 +286,9 @@
   "newTabSoundType": {
     "message": "Sound Type"
   },
+  "newTabSoundVolume": {
+    "message": "Sound Volume"
+  },
   "optionSoundOllie": {
     "message": "Ollie (skateboard pop)"
   },
@@ -330,6 +333,9 @@
   },
   "smartHomeRecent": {
     "message": "Recently Opened Tabs"
+  },
+  "openFullHistory": {
+    "message": "Full History"
   },
   "recentRules": {
     "message": "Recent Tab Rules"
