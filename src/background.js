@@ -7,8 +7,6 @@
 const swipeDeckFolderTitle = 'OhMySwipeDeck';
 // Keep the old root folder discoverable for users upgrading from the previous name.
 const legacySpeedDialFolderTitle = 'Speed Dial';
-const recentOpenedTabsStorageKey = 'recentOpenedTabs.v1';
-const recentOpenedTabsLimit = 120;
 
 // EVENT LISTENERS //
 
@@ -26,7 +24,6 @@ chrome.contextMenus.onClicked.addListener(handleContextMenuClick);
 chrome.runtime.onMessage.addListener(handleMessages);
 chrome.runtime.onInstalled.addListener(handleInstalled);
 chrome.tabs.onCreated.addListener(handleNewTabCreated);
-chrome.tabs.onRemoved.addListener(handleRecentTabRemoved);
 
 // Add tab listeners for Opera and browsers that don't support chrome_url_overrides
 if (isOpera()) { chrome.tabs.onCreated.addListener(handleTabCreated); }
@@ -64,8 +61,6 @@ async function handleMessages(message) {
 }
 
 async function handleNewTabCreated(tab) {
-	await rememberOpenedTab(tab);
-
     if (!tab || !tab.active || typeof tab.windowId !== 'number') {
 		return;
 	}
@@ -84,43 +79,6 @@ async function handleNewTabCreated(tab) {
 		await playNewTabSound(result.settings?.newTabSoundType, result.settings?.newTabSoundVolume);
 	} catch (error) {
 		console.warn('Unable to play new tab sound:', error);
-	}
-}
-
-async function rememberOpenedTab(tab) {
-	if (!tab || typeof tab.id !== 'number') {
-		return;
-	}
-
-	try {
-		const result = await chrome.storage.local.get(recentOpenedTabsStorageKey);
-		const recentTabs = result[recentOpenedTabsStorageKey] || {};
-		recentTabs[String(tab.id)] = {
-			openedAt: Date.now(),
-			windowId: tab.windowId,
-		};
-
-		const prunedEntries = Object.entries(recentTabs)
-			.sort(([, a], [, b]) => (b.openedAt || 0) - (a.openedAt || 0))
-			.slice(0, recentOpenedTabsLimit);
-
-		await chrome.storage.local.set({ [recentOpenedTabsStorageKey]: Object.fromEntries(prunedEntries) });
-	} catch (error) {
-		console.warn('Unable to remember opened tab:', error);
-	}
-}
-
-async function handleRecentTabRemoved(tabId) {
-	try {
-		const result = await chrome.storage.local.get(recentOpenedTabsStorageKey);
-		const recentTabs = result[recentOpenedTabsStorageKey] || {};
-		if (!recentTabs[String(tabId)]) {
-			return;
-		}
-		delete recentTabs[String(tabId)];
-		await chrome.storage.local.set({ [recentOpenedTabsStorageKey]: recentTabs });
-	} catch (error) {
-		console.warn('Unable to forget closed tab:', error);
 	}
 }
 

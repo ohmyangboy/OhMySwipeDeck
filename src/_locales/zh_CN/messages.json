@@ -332,13 +332,13 @@
     "message": "网络搜索"
   },
   "smartHomeRecent": {
-    "message": "最近打开的标签"
+    "message": "最近打开的页面"
   },
   "openFullHistory": {
     "message": "完整历史记录"
   },
   "recentRules": {
-    "message": "最近标签规则"
+    "message": "最近页面规则"
   },
   "includePatterns": {
     "message": "包含规则"
@@ -347,13 +347,13 @@
     "message": "排除规则"
   },
   "enableRecentPages": {
-    "message": "启用最近标签"
+    "message": "启用最近页面"
   },
   "recentUnavailable": {
-    "message": "此浏览器无法读取当前标签。"
+    "message": "此浏览器无法读取历史记录。"
   },
   "recentEmpty": {
-    "message": "没有匹配的打开标签。"
+    "message": "没有匹配的最近页面。"
   },
   "searchUnavailable": {
     "message": "无法使用浏览器默认搜索。"
@@ -413,13 +413,13 @@
     "message": "书签域名"
   },
   "ruleFieldTabTitle": {
-    "message": "标签标题"
+    "message": "页面标题"
   },
   "ruleFieldTabUrl": {
-    "message": "标签地址"
+    "message": "页面地址"
   },
   "ruleFieldTabDomain": {
-    "message": "标签域名"
+    "message": "页面域名"
   },
   "ruleValue": {
     "message": "关键词"

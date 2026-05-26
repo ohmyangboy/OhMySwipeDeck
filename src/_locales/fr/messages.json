@@ -329,10 +329,10 @@
     "message": "Web Search"
   },
   "smartHomeRecent": {
-    "message": "Recently Opened Tabs"
+    "message": "Recently Opened Pages"
   },
   "recentRules": {
-    "message": "Recent Tab Rules"
+    "message": "Recent Page Rules"
   },
   "includePatterns": {
     "message": "Include patterns"
@@ -341,13 +341,13 @@
     "message": "Exclude patterns"
   },
   "enableRecentPages": {
-    "message": "Enable Recent Tabs"
+    "message": "Enable Recent Pages"
   },
   "recentUnavailable": {
-    "message": "Open tabs are not available in this browser."
+    "message": "History is not available in this browser."
   },
   "recentEmpty": {
-    "message": "No matching open tabs."
+    "message": "No matching recent pages."
   },
   "searchUnavailable": {
     "message": "Default browser search is unavailable."
@@ -407,13 +407,13 @@
     "message": "Bookmark domain"
   },
   "ruleFieldTabTitle": {
-    "message": "Tab title"
+    "message": "Page title"
   },
   "ruleFieldTabUrl": {
-    "message": "Tab URL"
+    "message": "Page URL"
   },
   "ruleFieldTabDomain": {
-    "message": "Tab domain"
+    "message": "Page domain"
   },
   "ruleValue": {
     "message": "Keyword"

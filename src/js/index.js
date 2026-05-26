@@ -177,8 +177,9 @@ const sceneDaily = 'daily';
 const sceneSyncStorageKey = 'sceneSync.v2';
 const legacySceneSyncStorageKey = 'sceneSync.v1';
 const sceneLocalStorageKey = 'sceneLocal.v1';
-const recentOpenedTabsStorageKey = 'recentOpenedTabs.v1';
 const smartHomeRecentLimit = 8;
+const smartHomeRecentHistoryFetchLimit = 60;
+const smartHomeRecentHistoryDays = 30;
 const defaultFocusHidePatterns = ['游戏', '视频', '吉他', '娱乐'];
 const sceneRuleActions = ['show', 'hide'];
 const sceneRuleMatches = ['contains', 'notContains'];
@@ -326,14 +327,14 @@ const i18nFallbackMessages = {
         smartHomeSettings: 'Smart Home',
         homeBookmarks: 'Home Bookmarks',
         smartHomeSearch: 'Web Search',
-        smartHomeRecent: 'Recently Opened Tabs',
+        smartHomeRecent: 'Recently Opened Pages',
         openFullHistory: 'Full History',
-        recentRules: 'Recent Tab Rules',
+        recentRules: 'Recent Page Rules',
         includePatterns: 'Include patterns',
         excludePatterns: 'Exclude patterns',
-        enableRecentPages: 'Enable Recent Tabs',
-        recentUnavailable: 'Open tabs are not available in this browser.',
-        recentEmpty: 'No matching open tabs.',
+        enableRecentPages: 'Enable Recent Pages',
+        recentUnavailable: 'History is not available in this browser.',
+        recentEmpty: 'No matching recent pages.',
         searchUnavailable: 'Default browser search is unavailable.',
         newTabSoundVolume: 'Sound Volume',
         sceneFocus: 'Focus',
@@ -356,9 +357,9 @@ const i18nFallbackMessages = {
         ruleFieldBookmarkTitle: 'bookmark title',
         ruleFieldBookmarkUrl: 'bookmark URL',
         ruleFieldBookmarkDomain: 'bookmark domain',
-        ruleFieldTabTitle: 'tab title',
-        ruleFieldTabUrl: 'tab URL',
-        ruleFieldTabDomain: 'tab domain',
+        ruleFieldTabTitle: 'page title',
+        ruleFieldTabUrl: 'page URL',
+        ruleFieldTabDomain: 'page domain',
         ruleValue: 'keyword',
         rulePreview: 'Preview',
         ruleVisible: 'shown',
@@ -374,14 +375,14 @@ const i18nFallbackMessages = {
         smartHomeSettings: '智能主页',
         homeBookmarks: '主页书签',
         smartHomeSearch: '网络搜索',
-        smartHomeRecent: '最近打开的标签',
+        smartHomeRecent: '最近打开的页面',
         openFullHistory: '完整历史记录',
-        recentRules: '最近标签规则',
+        recentRules: '最近页面规则',
         includePatterns: '包含规则',
         excludePatterns: '排除规则',
-        enableRecentPages: '启用最近标签',
-        recentUnavailable: '此浏览器无法读取当前标签。',
-        recentEmpty: '没有匹配的打开标签。',
+        enableRecentPages: '启用最近页面',
+        recentUnavailable: '此浏览器无法读取历史记录。',
+        recentEmpty: '没有匹配的最近页面。',
         searchUnavailable: '无法使用浏览器默认搜索。',
         newTabSoundVolume: '音量大小',
         sceneFocus: '专注',
@@ -404,9 +405,9 @@ const i18nFallbackMessages = {
         ruleFieldBookmarkTitle: '书签标题',
         ruleFieldBookmarkUrl: '书签地址',
         ruleFieldBookmarkDomain: '书签域名',
-        ruleFieldTabTitle: '标签标题',
-        ruleFieldTabUrl: '标签地址',
-        ruleFieldTabDomain: '标签域名',
+        ruleFieldTabTitle: '页面标题',
+        ruleFieldTabUrl: '页面地址',
+        ruleFieldTabDomain: '页面域名',
         ruleValue: '关键词',
         rulePreview: '预览',
         ruleVisible: '显示',
@@ -1330,11 +1331,11 @@ function renderRulePreview(container, sceneId) {
             sceneId
         )));
 
-    getRecentOpenTabs().then(tabs => {
-        tabs.slice(0, smartHomeRecentLimit).forEach(tab => list.appendChild(createPreviewRow(
+    getRecentHistoryItems().then(pages => {
+        pages.slice(0, smartHomeRecentLimit).forEach(page => list.appendChild(createPreviewRow(
             i18n('smartHomeRecent'),
-            tab.title || tab.url,
-            getTabRuleContext(tab),
+            page.title || page.url,
+            getTabRuleContext(page),
             sceneId
         )));
     });
@@ -2588,52 +2589,45 @@ function matchesScenePattern(value, patterns) {
     return patterns.some(pattern => haystack.includes(pattern.toLowerCase()));
 }
 
-function isSupportedRecentTabUrl(url) {
+function isSupportedRecentPageUrl(url) {
     if (!url || url.startsWith(chrome.runtime.getURL('')) || url === 'chrome://newtab/') {
         return false;
     }
     return isSupportedBookmarkUrl(url);
 }
 
-function getTabSortTime(tab) {
-    return tab.openedAt || tab.lastAccessed || tab.id || 0;
-}
-
-async function getRecentOpenTabs() {
-    if (!chrome.tabs?.query) {
+async function getRecentHistoryItems() {
+    if (!chrome.history?.search) {
         return [];
     }
 
-    const [currentTab, tabs, storedTabs] = await Promise.all([
-        chrome.tabs.getCurrent ? chrome.tabs.getCurrent().catch(() => null) : Promise.resolve(null),
-        chrome.tabs.query({ currentWindow: true }).catch(() => chrome.tabs.query({})),
-        chrome.storage.local.get(recentOpenedTabsStorageKey).catch(() => ({})),
-    ]);
-    const openedTabs = storedTabs[recentOpenedTabsStorageKey] || {};
+    const startTime = Date.now() - smartHomeRecentHistoryDays * 24 * 60 * 60 * 1000;
+    const items = await chrome.history.search({
+        text: '',
+        startTime,
+        maxResults: smartHomeRecentHistoryFetchLimit,
+    }).catch(() => []);
 
-    return tabs
-        .filter(tab => tab.id !== currentTab?.id && isSupportedRecentTabUrl(tab.url))
-        .map(tab => ({
-            id: tab.id,
-            windowId: tab.windowId,
-            title: tab.title,
-            url: tab.url,
-            favIconUrl: tab.favIconUrl,
-            openedAt: openedTabs[String(tab.id)]?.openedAt || null,
-            lastAccessed: tab.lastAccessed || null,
-        }))
-        .sort((a, b) => getTabSortTime(b) - getTabSortTime(a));
+    return items
+        .filter(item => isSupportedRecentPageUrl(item.url))
+        .map(item => ({
+            id: item.id || item.url,
+            title: item.title,
+            url: item.url,
+            favIconUrl: getFaviconUrl(item.url, 32),
+            lastAccessed: item.lastVisitTime || null,
+        }));
 }
 
-function filterRecentTabItems(items, scene) {
+function filterRecentPageItems(items, scene) {
     const seen = new Set();
     const filtered = [];
 
     for (const item of items) {
-        if (!item.url || !isSupportedRecentTabUrl(item.url)) continue;
-        if (seen.has(item.id)) continue;
+        if (!item.url || !isSupportedRecentPageUrl(item.url)) continue;
+        if (seen.has(item.url)) continue;
         if (!evaluateSceneVisibility(getTabRuleContext(item), scene.id).visible) continue;
-        seen.add(item.id);
+        seen.add(item.url);
         filtered.push(item);
         if (filtered.length >= smartHomeRecentLimit) break;
     }
@@ -2650,17 +2644,15 @@ function formatRelativeTime(timestamp) {
     return `${Math.round(diffHours / 24)}d`;
 }
 
-function createRecentTabLink(item) {
+function createRecentPageLink(item) {
     const link = document.createElement('a');
     link.className = 'smartHomeRecentItem';
     link.href = item.url;
     link.setAttribute('data-id', item.id || item.url);
-    link.dataset.tabId = String(item.id);
-    link.dataset.windowId = String(item.windowId);
 
     const icon = document.createElement('span');
     icon.className = 'smartHomeRecentIcon';
-    icon.style.backgroundImage = `url("${item.favIconUrl || getFaviconUrl(item.url, 32)}")`;
+    icon.style.backgroundImage = `url("${item.favIconUrl}")`;
 
     const text = document.createElement('span');
     text.className = 'smartHomeRecentText';
@@ -2677,7 +2669,7 @@ function createRecentTabLink(item) {
 
     const time = document.createElement('span');
     time.className = 'smartHomeRecentTime';
-    time.textContent = formatRelativeTime(item.openedAt || item.lastAccessed);
+    time.textContent = formatRelativeTime(item.lastAccessed);
 
     link.append(icon, text, time);
     return link;
@@ -2709,7 +2701,7 @@ async function renderRecentPagesSection(parent, scene) {
     section.querySelector('.smartHomeSectionHeader')?.appendChild(createOpenHistoryButton());
     parent.appendChild(section);
 
-    if (!chrome.tabs?.query) {
+    if (!chrome.history?.search) {
         const message = document.createElement('p');
         message.className = 'smartHomeEmpty';
         message.textContent = i18n('recentUnavailable');
@@ -2717,7 +2709,7 @@ async function renderRecentPagesSection(parent, scene) {
         return;
     }
 
-    const recentItems = filterRecentTabItems(await getRecentOpenTabs(), scene);
+    const recentItems = filterRecentPageItems(await getRecentHistoryItems(), scene);
     if (!recentItems.length) {
         const message = document.createElement('p');
         message.className = 'smartHomeEmpty';
@@ -2728,7 +2720,7 @@ async function renderRecentPagesSection(parent, scene) {
 
     const list = document.createElement('div');
     list.className = 'smartHomeRecentList';
-    recentItems.forEach(item => list.appendChild(createRecentTabLink(item)));
+    recentItems.forEach(item => list.appendChild(createRecentPageLink(item)));
     section.appendChild(list);
 }
 
@@ -3200,25 +3192,6 @@ function openTile(tile, event) {
     }
 
     return false;
-}
-
-async function activateRecentTab(tile) {
-    const tabId = Number(tile?.dataset?.tabId);
-    const windowId = Number(tile?.dataset?.windowId);
-    if (!Number.isInteger(tabId)) {
-        return false;
-    }
-
-    try {
-        await chrome.tabs.update(tabId, { active: true });
-        if (Number.isInteger(windowId) && chrome.windows?.update) {
-            await chrome.windows.update(windowId, { focused: true });
-        }
-        return true;
-    } catch (error) {
-        console.warn('Unable to activate recent tab:', error);
-        return false;
-    }
 }
 
 function offscreenCanvasShim(w, h) {
@@ -4106,12 +4079,6 @@ window.addEventListener("click", async e => {
     }
     if (e.target.closest && e.target.closest('.tile:not(.createDial), .smartHomeRecentItem')) {
         let tile = e.target.closest('.tile:not(.createDial), .smartHomeRecentItem');
-        if (tile.classList.contains('smartHomeRecentItem') && !e.metaKey && !e.ctrlKey && e.button !== 1) {
-            e.preventDefault();
-            if (await activateRecentTab(tile)) {
-                return;
-            }
-        }
         if (openTile(tile, e)) {
             e.preventDefault();
         }
