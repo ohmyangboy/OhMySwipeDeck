@@ -1,8 +1,19 @@
 .sidenav .settings {
     width: 100%;
-    padding: 14px 25px;
+    padding: 18px 16px 24px;
     height: 100%;
     overflow: hidden;
+    font-family: "PingFang SC", "Hiragino Sans GB", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 13px;
+    line-height: 1.38;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: geometricPrecision;
+    --setting-radius: 10px;
+    --setting-control-height: 34px;
+    --setting-cell-bg: color-mix(in srgb, var(--color) 3.4%, transparent);
+    --setting-cell-bg-hover: color-mix(in srgb, var(--color) 5.8%, transparent);
+    --setting-control-bg: color-mix(in srgb, var(--surface-glass-strong) 84%, transparent);
+    --setting-control-border: color-mix(in srgb, var(--line-soft) 76%, transparent);
 }
 
 #settingsDiv {
@@ -15,8 +26,12 @@
 }
 
 .sidenav h1 {
-    font-weight: bold;
-    font-size: large;
+    margin: 0 38px 14px 0;
+    padding: 0;
+    font-size: 16px;
+    font-weight: 720;
+    line-height: 1.2;
+    letter-spacing: 0;
     /*
     background-image: url('../icons/icon48-white.png');
     background-repeat: no-repeat;
@@ -25,20 +40,27 @@
 }
 
 .sidenav hr {
-    border: 1px solid var(--line-soft);
+    border: none;
+    border-top: 1px solid color-mix(in srgb, var(--line-soft) 76%, transparent);
+    margin: 10px 0;
 }
 
-.sidenav div {
+.sidenav .settings > div {
     padding: 0.3em 0;
 }
 
 .sidenav .closeBtn {
     all: unset;
     position: absolute;
-    top: 20px;
-    right: 25px;
+    top: 14px;
+    right: 14px;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
     background: none;
-    border: none;
+    border: 1px solid transparent;
+    border-radius: 50%;
     font-size: 24px;
     color: var(--muted);
     cursor: default;
@@ -47,7 +69,8 @@
 
 .sidenav .closeBtn:hover {
     color: var(--color);
-    background-color: transparent;
+    background-color: color-mix(in srgb, var(--color) 7%, transparent);
+    border-color: color-mix(in srgb, var(--line-soft) 70%, transparent);
 }
 .sidenav .closeBtn:focus {
     outline: none;
@@ -65,14 +88,16 @@
 .sidenav button {
     padding: .6em;
     width: 100%;
-    background-color: color-mix(in srgb, var(--accent) 32%, var(--surface-2));
+    font: inherit;
+    background-color: color-mix(in srgb, var(--accent) 24%, var(--surface-2));
     color: var(--color);
-    border: none;
-    border-radius: 7px;
+    border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line-soft));
+    border-radius: 8px;
 }
 
 .sidenav button:hover {
-    background-color: color-mix(in srgb, var(--accent) 42%, var(--surface-2));
+    background-color: color-mix(in srgb, var(--accent) 34%, var(--surface-2));
+    border-color: color-mix(in srgb, var(--accent) 44%, var(--line-bright));
 }
 
 .sidenav .default {
@@ -85,10 +110,15 @@
 }
 
 .sidenav #preview {
-    width: 270px;
-    max-height: 160px;
-    border: 1px solid var(--line-soft);
-    border-radius: 8px;
+    width: 100%;
+    height: 90px;
+    max-height: none;
+    display: block;
+    object-fit: cover;
+    object-position: top center;
+    border: 1px solid var(--setting-control-border);
+    border-radius: var(--setting-radius);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .sidenav #preview.defaultWallpaperPreview {
@@ -117,18 +147,32 @@ body.themeLight .sidenav #preview.defaultWallpaperPreview {
     opacity: 0;
     transform-origin: 0 0;
     transition: all 160ms ease;
+    align-items: stretch;
+    padding: 8px;
+}
+
+.sidenav #previewContainer > .column:first-child {
+    display: none;
+}
+
+.sidenav #previewContainer > .controls {
+    flex: 1 1 100%;
+    max-width: none;
+    width: 100%;
+    align-items: stretch;
+    position: relative;
 }
 
 .sidenav #previewOverlay {
     position: absolute;
     bottom: 0;
-    width: 270px;
+    width: 100%;
     height: 100%;
     transition: all 160ms ease;
     background: url('../img/upload.png') no-repeat center color-mix(in srgb, var(--surface-0) 86%, #000 14%);
     opacity: 0;
     cursor: pointer;
-    border-radius: 8px;
+    border-radius: var(--setting-radius);
     z-index: 1;
 }
 
@@ -174,16 +218,47 @@ body.themeLight .sidenav #preview.defaultWallpaperPreview {
     flex-wrap: wrap;
     width: 100%;
     align-items: center;
+    min-height: 44px;
+    margin: 0 0 6px;
+    padding: 7px 8px;
+    border: 1px solid transparent;
+    border-radius: var(--setting-radius);
+    background: var(--setting-cell-bg);
+    transition:
+        background 160ms ease,
+        border-color 160ms ease;
+}
+
+.sidenav .row:hover {
+    border-color: color-mix(in srgb, var(--line-soft) 68%, transparent);
+    background: var(--setting-cell-bg-hover);
 }
 
 .sidenav .column {
     display: flex;
     flex-direction: column;
     flex: 1;
+    min-width: 0;
+    padding: 0;
+}
+
+.sidenav .row > .column:first-child {
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 620;
+    line-height: 1.25;
+}
+
+.sidenav .row > .column:first-child label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .sidenav .controls {
     align-items: flex-end;
+    flex: 0 0 150px;
+    max-width: 150px;
 }
 
 
@@ -191,8 +266,9 @@ body.themeLight .sidenav #preview.defaultWallpaperPreview {
 .sidenav .switch {
     position: relative;
     display: inline-block;
-    width: 50px;
+    width: 44px;
     height: 24px;
+    padding: 0;
 }
 
 /* Hide default HTML checkbox */
@@ -210,7 +286,8 @@ body.themeLight .sidenav #preview.defaultWallpaperPreview {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: color-mix(in srgb, var(--color) 18%, transparent);
+    background-color: color-mix(in srgb, var(--color) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--line-soft) 76%, transparent);
     -webkit-transition: .2s;
     transition: .2s;
 }
@@ -221,8 +298,9 @@ body.themeLight .sidenav #preview.defaultWallpaperPreview {
     height: 16px;
     width: 16px;
     left: 4px;
-    bottom: 4px;
+    bottom: 3px;
     background-color: var(--surface-1);
+    box-shadow: 0 2px 7px rgba(0, 0, 0, 0.22);
     -webkit-transition: .2s;
     transition: .2s;
 }
@@ -232,7 +310,8 @@ body.themeLight .sidenav #preview.defaultWallpaperPreview {
 }
 
 .sidenav input:checked + .slider {
-    background-color: var(--accent);
+    background-color: color-mix(in srgb, var(--accent) 86%, var(--surface-2));
+    border-color: color-mix(in srgb, var(--accent) 42%, var(--line-bright));
 }
 
 .sidenav input:focus + .slider {
@@ -240,9 +319,9 @@ body.themeLight .sidenav #preview.defaultWallpaperPreview {
 }
 
 .sidenav input:checked + .slider:before {
-    -webkit-transform: translateX(26px);
-    -ms-transform: translateX(26px);
-    transform: translateX(26px);
+    -webkit-transform: translateX(20px);
+    -ms-transform: translateX(20px);
+    transform: translateX(20px);
 }
 
 /* Rounded sliders */
@@ -257,24 +336,30 @@ body.themeLight .sidenav #preview.defaultWallpaperPreview {
 .sidenav input[type="color"] {
     opacity: 0;
     display: block;
-    width: 50px;
+    width: 44px;
     height: 24px;
     border: none;
 }
 
 .sidenav #color-picker-wrapper {
-    width: 50px;
+    width: 44px;
+    height: 24px;
     padding: 0;
     border-radius: 34px;
-    border: 1px solid var(--line-soft);
+    border: 1px solid var(--setting-control-border);
+    background: var(--setting-control-bg);
+    overflow: hidden;
     /*float: left;*/
 }
 
 .sidenav #textColor-picker-wrapper {
-    width: 50px;
+    width: 44px;
+    height: 24px;
     padding: 0;
     border-radius: 34px;
-    border: 1px solid var(--line-soft);
+    border: 1px solid var(--setting-control-border);
+    background: var(--setting-control-bg);
+    overflow: hidden;
     /*float: left;*/
 }
 
@@ -285,26 +370,35 @@ body.themeLight .sidenav #preview.defaultWallpaperPreview {
 }
 
 
-.sidenav select {
+.sidenav select,
+.sidenav input[type="text"],
+.sidenav input:not([type]),
+.sidenav textarea {
     position: relative;
     outline: none;
-    padding: 0.45em 1em;
-    border: 1px solid var(--line-soft);
+    min-height: var(--setting-control-height);
+    padding: 0 10px;
+    border: 1px solid var(--setting-control-border);
     border-radius: 8px;
     color: var(--color);
+    font: inherit;
+    font-size: 13px;
     background:
-        linear-gradient(180deg, color-mix(in srgb, #fff 8%, transparent), transparent),
-        var(--surface-glass);
+        linear-gradient(180deg, color-mix(in srgb, #fff 7%, transparent), transparent),
+        var(--setting-control-bg);
     width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.08),
-        0 8px 20px rgba(0, 0, 0, 0.08);
+        0 6px 16px rgba(0, 0, 0, 0.055);
 }
 
-.sidenav select:focus {
+.sidenav select:focus,
+.sidenav input[type="text"]:focus,
+.sidenav input:not([type]):focus,
+.sidenav textarea:focus {
     border-color: color-mix(in srgb, var(--accent) 42%, var(--line-soft));
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.12),
@@ -313,41 +407,82 @@ body.themeLight .sidenav #preview.defaultWallpaperPreview {
 
 .sceneRulePanel {
     width: 100%;
-    padding: 0.35em 0 0.75em;
+    margin: 8px 0 10px;
+    padding: 10px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
+    border: 1px solid color-mix(in srgb, var(--line-soft) 76%, transparent);
+    border-radius: 12px;
+    background:
+        linear-gradient(180deg, color-mix(in srgb, #fff 4%, transparent), transparent 38%),
+        color-mix(in srgb, var(--color) 3.8%, transparent);
+}
+
+.sceneRulePanel > div {
+    padding: 0;
 }
 
 .scenePillList {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
+    padding: 0;
 }
 
-.scenePill,
-.sceneActionButton,
-.sceneIconButton {
-    border: 1px solid var(--line-soft);
-    border-radius: 7px;
-    background: color-mix(in srgb, var(--surface-glass) 76%, transparent);
+.sidenav .scenePill,
+.sidenav .sceneActionButton,
+.sidenav .sceneIconButton {
+    width: auto;
+    border: 1px solid var(--setting-control-border);
+    border-radius: 8px;
+    background:
+        linear-gradient(180deg, color-mix(in srgb, #fff 7%, transparent), transparent),
+        color-mix(in srgb, var(--surface-glass) 82%, transparent);
     color: var(--color);
-    min-height: 30px;
+    min-height: 32px;
     padding: 0 10px;
+    font: inherit;
+    line-height: 1.15;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 5px 14px rgba(0, 0, 0, 0.045);
+}
+
+.sidenav .scenePill:hover,
+.sidenav .sceneActionButton:hover,
+.sidenav .sceneIconButton:hover {
+    border-color: color-mix(in srgb, var(--line-bright) 78%, transparent);
+    background:
+        linear-gradient(180deg, color-mix(in srgb, #fff 10%, transparent), transparent),
+        color-mix(in srgb, var(--surface-glass-strong) 90%, transparent);
 }
 
 .scenePill.active {
     border-color: color-mix(in srgb, var(--accent) 44%, var(--line-bright));
-    background: color-mix(in srgb, var(--accent) 16%, var(--surface-glass-strong));
+    background:
+        linear-gradient(180deg, color-mix(in srgb, #fff 7%, transparent), transparent),
+        color-mix(in srgb, var(--accent) 16%, var(--surface-glass-strong));
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        0 0 0 1px color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
 .sceneRuleMeta {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(112px, 0.75fr);
+    grid-template-columns: minmax(0, 1fr) minmax(118px, 0.82fr);
     gap: 7px;
+    padding: 8px;
+    border: 1px solid color-mix(in srgb, var(--line-soft) 74%, transparent);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--surface-glass) 70%, transparent);
 }
 
 .sceneRuleMeta .sceneActionButton {
+    width: 100%;
+}
+
+.sceneRulePanel > .sceneActionButton {
     width: 100%;
 }
 
@@ -355,16 +490,26 @@ body.themeLight .sidenav #preview.defaultWallpaperPreview {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 42px;
     align-items: center;
-    gap: 4px 8px;
-    border-top: 1px solid color-mix(in srgb, var(--line-soft) 62%, transparent);
-    padding-top: 8px;
+    gap: 6px 8px;
+    padding: 8px;
+    border: 1px solid color-mix(in srgb, var(--line-soft) 58%, transparent);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--color) 2.6%, transparent);
 }
 
 .sceneModuleLabel,
 .scenePanelTitle,
 .sceneRuleNotice {
     color: var(--muted);
-    font-size: 0.82em;
+    font-size: 12px;
+}
+
+.scenePanelTitle {
+    display: flex;
+    align-items: center;
+    min-height: 18px;
+    font-weight: 650;
+    letter-spacing: 0;
 }
 
 .sceneToggle {
@@ -380,26 +525,64 @@ body.themeLight .sidenav #preview.defaultWallpaperPreview {
 .sceneRulesList {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
+    padding: 0;
 }
 
 .sceneRuleRow {
+    position: relative;
     display: grid;
-    grid-template-columns: 76px minmax(98px, 0.9fr) minmax(0, 1fr) 30px;
+    grid-template-columns: minmax(72px, 0.82fr) minmax(0, 1fr) 30px;
     gap: 6px;
     align-items: center;
+    padding: 8px;
+    border: 1px solid color-mix(in srgb, var(--line-soft) 68%, transparent);
+    border-radius: 10px;
+    background:
+        linear-gradient(180deg, color-mix(in srgb, #fff 5%, transparent), transparent),
+        color-mix(in srgb, var(--surface-glass) 72%, transparent);
+}
+
+.sceneRuleRow select {
+    min-width: 0;
+    height: 32px;
+    padding: 0 8px;
+}
+
+.sceneRuleRow select:first-child {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.sceneRuleRow select:nth-child(2) {
+    grid-column: 1 / 3;
+    grid-row: 2;
+}
+
+.sceneRuleMatch {
+    grid-column: 2;
+    grid-row: 1;
 }
 
 .sceneRuleValue {
     min-width: 0;
+    grid-column: 1 / 3;
+    grid-row: 3;
+    height: 32px;
+    padding: 0 9px;
+    box-sizing: border-box;
 }
 
-.sceneIconButton {
+.sidenav .sceneIconButton {
     width: 30px;
     min-width: 30px;
+    height: 30px;
     padding: 0;
     font-size: 18px;
     line-height: 1;
+    align-self: start;
+    grid-column: 3;
+    grid-row: 1;
 }
 
 .scenePreviewList {
@@ -413,46 +596,135 @@ body.themeLight .sidenav #preview.defaultWallpaperPreview {
 
 .scenePreviewRow {
     display: grid;
-    grid-template-columns: 56px minmax(0, 1fr) 42px;
-    gap: 6px;
+    grid-template-columns: 64px minmax(0, 1fr) 36px;
+    gap: 4px 7px;
     align-items: center;
-    min-height: 30px;
-    padding: 4px 6px;
-    border-radius: 6px;
-    background: color-mix(in srgb, var(--color) 5%, transparent);
+    min-height: 36px;
+    padding: 6px 7px;
+    border: 1px solid color-mix(in srgb, var(--line-soft) 52%, transparent);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--color) 4.5%, transparent);
 }
 
 .scenePreviewRow.hidden {
-    opacity: 0.62;
+    opacity: 0.66;
 }
 
 .scenePreviewType,
 .scenePreviewStatus,
 .scenePreviewReason {
     color: var(--muted);
-    font-size: 0.75em;
+    font-size: 11px;
+}
+
+.scenePreviewType,
+.scenePreviewStatus {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .scenePreviewName {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-size: 12px;
+    line-height: 1.25;
 }
 
 .scenePreviewReason {
-    grid-column: 2 / 4;
+    grid-column: 1 / 4;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.settingsLink {
-    height: 25px;
+#importExportModalContent {
+    box-sizing: border-box;
+    width: min(440px, calc(100vw - 32px));
+    padding: 0;
+    overflow: hidden;
+}
+
+#importExportModalContent .tileForm {
+    padding: 18px;
+}
+
+#importExportModalName {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 32px;
+    padding: 0 0 10px;
+    font-size: 15px;
+}
+
+#importExportModalName .closeBtn {
+    float: none;
+    display: grid;
+    flex: 0 0 28px;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
     color: var(--muted);
+    font-size: 20px;
+    line-height: 1;
+}
+
+#importExportModalContent .formItem {
+    padding: 6px 0;
+}
+
+#importExportModalContent .formItem:first-of-type {
+    color: var(--muted);
+    line-height: 1.55;
+}
+
+#importExportModalContent .importExportForm {
+    padding-top: 12px;
+}
+
+#importExportModalContent .button {
+    box-sizing: border-box;
+    min-height: 38px;
+    border: 1px solid color-mix(in srgb, var(--line-soft) 68%, transparent);
+    border-radius: 8px;
+}
+
+@media (max-width: 420px) {
+    .sceneRuleMeta {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.sidenav .row:has(.settingsLink) {
+    min-height: 40px;
+    padding: 5px 8px;
+}
+
+.sidenav .row:has(.settingsLink) > .column:first-child {
+    flex: 1 1 100%;
+}
+
+.settingsLink {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 28px;
+    height: auto;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.2;
+    border-radius: 8px;
 }
 
 .settingsLink:hover {
     color: var(--color);
+    background: color-mix(in srgb, var(--color) 5%, transparent);
 }
 
 .settingsLinkDanger {

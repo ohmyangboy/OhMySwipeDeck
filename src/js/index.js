@@ -179,6 +179,7 @@ const recentOpenedTabsStorageKey = 'recentOpenedTabs.v1';
 const smartHomeRecentLimit = 8;
 const defaultFocusHidePatterns = ['游戏', '视频', '吉他', '娱乐'];
 const sceneRuleActions = ['show', 'hide'];
+const sceneRuleMatches = ['contains', 'notContains'];
 const sceneRuleFields = [
     'folder.title',
     'folder.path',
@@ -341,6 +342,8 @@ const i18nFallbackMessages = {
         removeRule: 'Remove',
         ruleActionShow: 'show',
         ruleActionHide: 'hide',
+        ruleMatchContains: 'contains',
+        ruleMatchNotContains: 'does not contain',
         ruleFieldFolderTitle: 'folder title',
         ruleFieldFolderPath: 'folder path',
         ruleFieldBookmarkTitle: 'bookmark title',
@@ -385,6 +388,8 @@ const i18nFallbackMessages = {
         removeRule: '删除',
         ruleActionShow: '显示',
         ruleActionHide: '隐藏',
+        ruleMatchContains: '包含',
+        ruleMatchNotContains: '不包含',
         ruleFieldFolderTitle: '文件夹名称',
         ruleFieldFolderPath: '文件夹路径',
         ruleFieldBookmarkTitle: '书签标题',
@@ -586,12 +591,12 @@ function createSceneId(name = 'scene') {
     return candidate;
 }
 
-function createSceneRule(action = 'hide', field = 'folder.title', value = '') {
+function createSceneRule(action = 'hide', field = 'folder.title', value = '', match = 'contains') {
     return {
         id: `rule-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         action: sceneRuleActions.includes(action) ? action : 'hide',
         field: sceneRuleFields.includes(field) ? field : 'folder.title',
-        match: 'contains',
+        match: sceneRuleMatches.includes(match) ? match : 'contains',
         value: String(value || '').trim(),
     };
 }
@@ -635,7 +640,7 @@ function normalizeSceneRuleEntry(rule = {}) {
         id: typeof rule.id === 'string' && rule.id ? rule.id : createSceneRule().id,
         action: sceneRuleActions.includes(rule.action) ? rule.action : 'hide',
         field: sceneRuleFields.includes(rule.field) ? rule.field : 'folder.title',
-        match: 'contains',
+        match: sceneRuleMatches.includes(rule.match) ? rule.match : 'contains',
         value,
     };
 }
@@ -894,6 +899,17 @@ function getRuleActionLabel(action) {
     return action === 'show' ? i18n('ruleActionShow') : i18n('ruleActionHide');
 }
 
+function getRuleMatchLabel(match) {
+    return match === 'notContains' ? i18n('ruleMatchNotContains') : i18n('ruleMatchContains');
+}
+
+function hasRuleFieldContext(context, field) {
+    if (field.startsWith('folder.')) return Boolean(context.folder);
+    if (field.startsWith('bookmark.')) return Boolean(context.bookmark);
+    if (field.startsWith('tab.')) return Boolean(context.tab);
+    return false;
+}
+
 function getRuleFieldValue(context, field) {
     switch (field) {
         case 'folder.title':
@@ -920,7 +936,10 @@ function getRuleFieldValue(context, field) {
 function doesRuleMatch(rule, context) {
     const value = String(rule.value || '').trim().toLowerCase();
     if (!value) return false;
-    return String(getRuleFieldValue(context, rule.field) || '').toLowerCase().includes(value);
+    if (!hasRuleFieldContext(context, rule.field)) return false;
+    const fieldValue = String(getRuleFieldValue(context, rule.field) || '').toLowerCase();
+    const containsValue = fieldValue.includes(value);
+    return rule.match === 'notContains' ? !containsValue : containsValue;
 }
 
 function evaluateSceneVisibility(context, sceneId = getActiveScene()) {
@@ -1180,6 +1199,19 @@ function createSceneRuleRow(scene, rule, index) {
         nextScene.rules[index].field = event.target.value;
     }));
 
+    const match = document.createElement('select');
+    match.className = 'settingsCtl sceneRuleMatch';
+    for (const matchValue of sceneRuleMatches) {
+        const option = document.createElement('option');
+        option.value = matchValue;
+        option.textContent = getRuleMatchLabel(matchValue);
+        match.appendChild(option);
+    }
+    match.value = rule.match;
+    match.addEventListener('change', event => updateSceneConfig(scene.id, nextScene => {
+        nextScene.rules[index].match = event.target.value;
+    }));
+
     const value = document.createElement('input');
     value.className = 'settingsCtl sceneRuleValue';
     value.type = 'text';
@@ -1198,7 +1230,7 @@ function createSceneRuleRow(scene, rule, index) {
         nextScene.rules.splice(index, 1);
     }));
 
-    row.append(action, field, value, remove);
+    row.append(action, field, match, value, remove);
     return row;
 }
 
@@ -1222,7 +1254,7 @@ function createPreviewRow(typeLabel, label, context, sceneId) {
     const reason = document.createElement('span');
     reason.className = 'scenePreviewReason';
     reason.textContent = decision.matchedRule
-        ? `${getRuleActionLabel(decision.matchedRule.action)} ${getRuleFieldLabel(decision.matchedRule.field)}: ${decision.matchedRule.value}`
+        ? `${getRuleActionLabel(decision.matchedRule.action)} ${getRuleFieldLabel(decision.matchedRule.field)} ${getRuleMatchLabel(decision.matchedRule.match)}: ${decision.matchedRule.value}`
         : i18n('ruleDefault');
 
     row.append(type, name, status, reason);
