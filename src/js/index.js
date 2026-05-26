@@ -200,6 +200,8 @@ const defaultSceneModules = {
     recentTabsEnabled: true,
     homeBookmarksEnabled: true,
 };
+const validDialSizes = ['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large'];
+const validDialRatios = ['square', 'wide', 'flow'];
 const soundOpenZen = 'open-zen';
 const soundOpenRise = 'open-rise';
 const soundSoftBloom = 'soft-bloom';
@@ -272,7 +274,7 @@ let defaults = {
     newTabSoundType: soundOpenZen,
     newTabSoundVolume: 1,
     textColor: '#f3f5f7',
-    dialSize: 'large',
+    dialSize: 'medium',
     dialRatio: 'flow',
     currentFolder: null,
     activeScene: sceneAll,
@@ -574,6 +576,144 @@ function cloneDefaultSettings() {
     return JSON.parse(JSON.stringify(defaults));
 }
 
+function getFlowDialSizeMetrics(dialSize = defaults.dialSize) {
+    switch (dialSize) {
+        case 'xx-large':
+            return {
+                height: '70px',
+                iconSize: '28px',
+                iconRadius: '7px',
+                minWidth: '164px',
+                maxWidth: '372px',
+                titleMaxWidth: '286px',
+                gap: '16px',
+                paddingX: '24px',
+                titleSize: '17.5px',
+                createWidth: '66px',
+                createIconSize: '24px',
+                radius: '10px',
+                folderDropPadding: '80px',
+            };
+        case 'x-large':
+            return {
+                height: '62px',
+                iconSize: '24px',
+                iconRadius: '6px',
+                minWidth: '144px',
+                maxWidth: '324px',
+                titleMaxWidth: '248px',
+                gap: '14px',
+                paddingX: '20px',
+                titleSize: '16px',
+                createWidth: '58px',
+                createIconSize: '22px',
+                radius: '9px',
+                folderDropPadding: '70px',
+            };
+        case 'large':
+            return {
+                height: '56px',
+                iconSize: '22px',
+                iconRadius: '6px',
+                minWidth: '128px',
+                maxWidth: '292px',
+                titleMaxWidth: '222px',
+                gap: '12px',
+                paddingX: '18px',
+                titleSize: '15px',
+                createWidth: '52px',
+                createIconSize: '20px',
+                radius: '8px',
+                folderDropPadding: '64px',
+            };
+        case 'small':
+            return {
+                height: '44px',
+                iconSize: '18px',
+                iconRadius: '5px',
+                minWidth: '96px',
+                maxWidth: '220px',
+                titleMaxWidth: '164px',
+                gap: '10px',
+                paddingX: '14px',
+                titleSize: '13px',
+                createWidth: '42px',
+                createIconSize: '16px',
+                radius: '7px',
+                folderDropPadding: '45px',
+            };
+        case 'x-small':
+            return {
+                height: '38px',
+                iconSize: '16px',
+                iconRadius: '4px',
+                minWidth: '84px',
+                maxWidth: '190px',
+                titleMaxWidth: '141px',
+                gap: '9px',
+                paddingX: '12px',
+                titleSize: '12px',
+                createWidth: '36px',
+                createIconSize: '14px',
+                radius: '6px',
+                folderDropPadding: '35px',
+            };
+        case 'xx-small':
+            return {
+                height: '34px',
+                iconSize: '14px',
+                iconRadius: '4px',
+                minWidth: '76px',
+                maxWidth: '168px',
+                titleMaxWidth: '126px',
+                gap: '8px',
+                paddingX: '10px',
+                titleSize: '11.5px',
+                createWidth: '32px',
+                createIconSize: '14px',
+                radius: '6px',
+                folderDropPadding: '30px',
+            };
+        case 'medium':
+        default:
+            return {
+                height: '52px',
+                iconSize: '20px',
+                iconRadius: '5px',
+                minWidth: '112px',
+                maxWidth: '260px',
+                titleMaxWidth: '196px',
+                gap: '12px',
+                paddingX: '17px',
+                titleSize: '14px',
+                createWidth: '48px',
+                createIconSize: '18px',
+                radius: '8px',
+                folderDropPadding: '60px',
+            };
+    }
+}
+
+function applyFlowDialSize(dialSize) {
+    const flowSize = getFlowDialSizeMetrics(dialSize);
+    document.documentElement.style.setProperty('--dial-width', 'auto');
+    document.documentElement.style.setProperty('--dial-height', flowSize.height);
+    document.documentElement.style.setProperty('--dial-content-height', flowSize.iconSize);
+    document.documentElement.style.setProperty('--dial-margin', '0');
+    document.documentElement.style.setProperty('--folder-drop-padding', flowSize.folderDropPadding);
+    document.documentElement.style.setProperty('--flow-dial-min-width', flowSize.minWidth);
+    document.documentElement.style.setProperty('--flow-dial-max-width', flowSize.maxWidth);
+    document.documentElement.style.setProperty('--flow-dial-title-max-width', flowSize.titleMaxWidth);
+    document.documentElement.style.setProperty('--flow-dial-icon-size', flowSize.iconSize);
+    document.documentElement.style.setProperty('--flow-dial-icon-radius', flowSize.iconRadius);
+    document.documentElement.style.setProperty('--flow-dial-gap', flowSize.gap);
+    document.documentElement.style.setProperty('--flow-dial-padding-x', flowSize.paddingX);
+    document.documentElement.style.setProperty('--flow-dial-title-size', flowSize.titleSize);
+    document.documentElement.style.setProperty('--flow-dial-create-width', flowSize.createWidth);
+    document.documentElement.style.setProperty('--flow-dial-create-icon-size', flowSize.createIconSize);
+    document.documentElement.style.setProperty('--flow-dial-radius', flowSize.radius);
+}
+
 function uniqueStringList(value) {
     if (!Array.isArray(value)) {
         return [];
@@ -804,6 +944,12 @@ function normalizeSettings(nextSettings = {}) {
     normalized.activeScene = typeof normalized.activeScene === 'string' && normalized.activeScene
         ? normalized.activeScene
         : sceneAll;
+    normalized.dialSize = validDialSizes.includes(normalized.dialSize)
+        ? normalized.dialSize
+        : defaults.dialSize;
+    normalized.dialRatio = validDialRatios.includes(normalized.dialRatio)
+        ? normalized.dialRatio
+        : defaults.dialRatio;
     normalized.sceneFolders = {
         work: uniqueStringList(normalized.sceneFolders?.work),
         life: uniqueStringList(normalized.sceneFolders?.life),
@@ -3829,13 +3975,7 @@ function applySettings() {
         }
 
         if (isFlowDial) {
-            document.documentElement.style.setProperty('--dial-width', 'auto');
-            document.documentElement.style.setProperty('--dial-height', '52px');
-            document.documentElement.style.setProperty('--dial-content-height', '20px');
-            document.documentElement.style.setProperty('--dial-margin', '0');
-            document.documentElement.style.setProperty('--folder-drop-padding', '60px');
-            document.documentElement.style.setProperty('--flow-dial-min-width', '112px');
-            document.documentElement.style.setProperty('--flow-dial-max-width', '260px');
+            applyFlowDialSize(settings.dialSize);
         } else if (settings.dialSize && settings.dialSize !== "large") {
             let dialWidth, dialHeight, dialContentHeight, dialMargin, folderDropPadding;
             switch (settings.dialSize) {

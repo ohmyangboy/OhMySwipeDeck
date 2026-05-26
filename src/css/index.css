@@ -22,9 +22,19 @@
     --image-scaling: contain;
     --dial-width: 178px;
     --dial-height: 118px;
+    --dial-content-height: 100px;
     --dial-margin: 14px; /*todo: oops accidentally bumped this from 12 to 18 */
     --flow-dial-min-width: 112px;
     --flow-dial-max-width: 260px;
+    --flow-dial-title-max-width: 196px;
+    --flow-dial-icon-size: 20px;
+    --flow-dial-icon-radius: 5px;
+    --flow-dial-gap: 12px;
+    --flow-dial-padding-x: 17px;
+    --flow-dial-title-size: 14px;
+    --flow-dial-create-width: 48px;
+    --flow-dial-create-icon-size: 18px;
+    --flow-dial-radius: 8px;
     --folder-rail-height: 52px;
     --folder-rail-radius: 22px;
     --folder-rail-default-width: clamp(188px, 32vw, 420px);
@@ -298,7 +308,9 @@ h1 {
     flex-grow: 1;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
+    box-sizing: border-box;
+    padding-block: clamp(18px, 4vh, 52px) 24px;
     transition: opacity 150ms ease-in;
     overflow-x: hidden;
     overflow-y: auto;
@@ -308,37 +320,38 @@ h1 {
 
 @media (max-width: 768px) {
     #tileContainer {
-        padding: 0 2px;
+        padding-inline: 2px;
     }
 }
 
 @media (min-width: 769px) and (max-width: 1920px) {
     #tileContainer {
-        padding: 0 10px;
+        padding-inline: 10px;
     }
 }
 
 @media (min-width: 1921px) and (max-width: 2560px) {
     #tileContainer {
-        padding: 0 20px;
+        padding-inline: 20px;
     }
 }
 
 @media (min-width: 2561px) {
     #tileContainer {
-        padding: 0 40px;
+        padding-inline: 40px;
     }
 }
 
 .container {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
-    align-content: safe center;
-    justify-content: center;
+    align-items: flex-start;
+    align-content: flex-start;
+    justify-content: flex-start;
+    width: min(100%, var(--columns));
     min-height: calc(100% - 78px);
     max-width: var(--columns);
-    margin: auto;
+    margin: 0 auto;
     opacity: 1;
     transition: none;
 }
@@ -346,11 +359,11 @@ h1 {
 .smartHomeContainer {
     align-items: stretch;
     align-content: flex-start;
-    justify-content: center;
+    justify-content: flex-start;
     width: min(1040px, calc(100vw - 56px));
     max-width: min(1040px, calc(100vw - 56px));
     min-height: auto;
-    margin: auto;
+    margin: 0 auto;
 }
 
 .smartHome {
@@ -860,11 +873,10 @@ h1 {
 }
 
 .flowDial #tileContainer {
-    justify-content: flex-start;
+    justify-content: center;
     align-items: flex-start;
     padding-top: clamp(52px, 11vh, 124px);
-    padding-left: clamp(22px, 7vw, 132px);
-    padding-right: 28px;
+    padding-inline: clamp(18px, 5vw, 72px);
 }
 
 .flowDial .container {
@@ -872,9 +884,9 @@ h1 {
     align-items: flex-start;
     justify-content: flex-start;
     min-height: auto;
-    width: min(980px, calc(100vw - 56px));
-    max-width: min(980px, calc(100vw - 56px));
-    margin: 0;
+    width: min(980px, 100%);
+    max-width: min(980px, 100%);
+    margin: 0 auto;
     gap: 8px;
 }
 
@@ -884,7 +896,7 @@ h1 {
     max-width: var(--flow-dial-max-width);
     height: var(--dial-height);
     margin: var(--dial-margin);
-    border-radius: 8px;
+    border-radius: var(--flow-dial-radius);
     flex: 0 1 auto;
     background:
         linear-gradient(180deg, color-mix(in srgb, var(--color) 7%, transparent), transparent),
@@ -913,35 +925,35 @@ h1 {
 .flowDial .tile-main {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: var(--flow-dial-gap);
     width: auto;
     max-width: 100%;
-    padding: 0 17px;
+    padding: 0 var(--flow-dial-padding-x);
     box-sizing: border-box;
 }
 
 .flowDial .tile-content {
-    width: 20px;
-    height: 20px;
-    flex: 0 0 20px;
-    border-radius: 5px;
+    width: var(--flow-dial-icon-size);
+    height: var(--flow-dial-icon-size);
+    flex: 0 0 var(--flow-dial-icon-size);
+    border-radius: var(--flow-dial-icon-radius);
     background-color: color-mix(in srgb, var(--color) 9%, transparent);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color) 10%, transparent);
     filter: saturate(1.08) brightness(1.12);
 }
 
 .flowDial .tile-content.favicon-thumb {
-    background-size: 20px 20px;
+    background-size: var(--flow-dial-icon-size) var(--flow-dial-icon-size);
     box-shadow: none;
 }
 
 .flowDial .tile-title {
     flex: 0 1 auto;
     min-width: 0;
-    max-width: calc(var(--flow-dial-max-width) - 64px);
+    max-width: var(--flow-dial-title-max-width);
     padding: 0;
     text-align: left;
-    font-size: 14px;
+    font-size: var(--flow-dial-title-size);
     font-weight: 600;
     line-height: 1;
     letter-spacing: 0;
@@ -1003,9 +1015,9 @@ body.themeLight.flowDial .tile-content {
 }
 
 .flowDial .createDial {
-    width: 48px;
-    min-width: 48px;
-    max-width: 48px;
+    width: var(--flow-dial-create-width);
+    min-width: var(--flow-dial-create-width);
+    max-width: var(--flow-dial-create-width);
     display: var(--create-dial-display);
 }
 
@@ -1015,10 +1027,10 @@ body.themeLight.flowDial .tile-content {
 }
 
 .flowDial .createDial-content {
-    width: 18px;
-    height: 18px;
-    flex-basis: 18px;
-    background-size: 18px 18px;
+    width: var(--flow-dial-create-icon-size);
+    height: var(--flow-dial-create-icon-size);
+    flex-basis: var(--flow-dial-create-icon-size);
+    background-size: var(--flow-dial-create-icon-size) var(--flow-dial-create-icon-size);
     border: 0;
     opacity: 0.72;
     box-shadow: none;
@@ -1027,8 +1039,7 @@ body.themeLight.flowDial .tile-content {
 @media (max-width: 768px) {
     .flowDial #tileContainer {
         padding-top: 48px;
-        padding-left: 18px;
-        padding-right: 18px;
+        padding-inline: 18px;
     }
 
     .flowDial .container {
@@ -1876,14 +1887,14 @@ body.themeLight .folders-drag-active .folders-content {
 body.flowDial .smartHomeContainer {
     width: min(1040px, calc(100vw - 56px));
     max-width: min(1040px, calc(100vw - 56px));
-    margin: auto;
+    margin: 0 auto;
     gap: 0;
 }
 
 body.flowDial #tileContainer:has(.smartHomeContainer) {
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    padding: 0 clamp(14px, 4vw, 28px);
+    padding: clamp(20px, 4vh, 52px) clamp(14px, 4vw, 28px) 24px;
 }
 
 body.flowDial .smartHomeTileGrid .tile,
